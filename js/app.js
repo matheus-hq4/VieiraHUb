@@ -1,5 +1,4 @@
 import { loadTools, saveTools, deleteTool, resetToDefaults, loadTheme, saveTheme } from './storage.js';
-import { ChatbotManager } from './chatbot.js';
 import { AuthManager } from './auth.js';
 import { VaultManager } from './vault.js';
 import { InventoryManager } from './inventory.js';
@@ -28,7 +27,6 @@ class App {
     this.initTheme();
     this.initDOMElements();
     this.initModules();
-    this.initChatbot();
     this.bindEvents();
     this.initUserManagement();
     this.switchTab(this.activeTab, false);
@@ -141,18 +139,6 @@ class App {
     // Toast
     this.toastContainer = document.getElementById('toast-container');
     this.toastMessage = document.getElementById('toast-message');
-  }
-
-  initChatbot() {
-    this.chatbot = new ChatbotManager(
-      () => this.tools,
-      (msg) => this.showToast(msg)
-    );
-
-    const heroChatBtn = document.getElementById('hero-chat-btn');
-    if (heroChatBtn) {
-      heroChatBtn.addEventListener('click', () => this.chatbot.toggleChat(true));
-    }
   }
 
   bindEvents() {
@@ -305,9 +291,6 @@ class App {
         }
         if (this.inventory) {
           this.inventory.closeModal();
-        }
-        if (this.chatbot && this.chatbot.isOpen) {
-          this.chatbot.toggleChat(false);
         }
       }
     });

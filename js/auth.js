@@ -63,6 +63,29 @@ export class AuthManager {
       }
     });
 
+    // Dropdown do menu compacto de usuário / admin
+    const userMenuBtn = document.getElementById('user-menu-btn');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+
+    if (userMenuBtn && userMenuDropdown) {
+      userMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userMenuDropdown.classList.toggle('hidden');
+      });
+
+      // Fechar ao clicar fora do dropdown
+      document.addEventListener('click', (e) => {
+        if (!userMenuBtn.contains(e.target) && !userMenuDropdown.contains(e.target)) {
+          userMenuDropdown.classList.add('hidden');
+        }
+      });
+
+      // Fechar ao selecionar qualquer ação interna
+      userMenuDropdown.addEventListener('click', () => {
+        userMenuDropdown.classList.add('hidden');
+      });
+    }
+
     // Botão de Logout
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async (e) => {
@@ -157,26 +180,43 @@ export class AuthManager {
 
   static updateUserBadge() {
     const user = AuthManager.getCurrentUser();
-    const userDisplay = document.getElementById('user-profile-display');
-    const userNameSpan = document.getElementById('user-profile-name');
-    const userRoleSpan = document.getElementById('user-profile-role');
+    const menuBtn = document.getElementById('user-menu-btn');
+    const userInitial = document.getElementById('dropdown-user-initial');
+    const userNameSpan = document.getElementById('dropdown-user-name');
+    const userRoleSpan = document.getElementById('dropdown-user-role');
     const adminMenuBtn = document.getElementById('admin-users-btn');
 
-    if (user && userDisplay) {
-      userDisplay.classList.remove('hidden');
-      userDisplay.classList.add('flex');
+    // Suporte legado se existirem elementos soltos
+    const legacyUserDisplay = document.getElementById('user-profile-display');
+    const legacyUserName = document.getElementById('user-profile-name');
+    const legacyUserRole = document.getElementById('user-profile-role');
+
+    if (user) {
       const displayName = user.name || user.username || 'Admin';
+      const isAdmin = user.role === 'admin';
+
       if (userNameSpan) userNameSpan.textContent = displayName;
+      if (userInitial) userInitial.textContent = displayName.charAt(0).toUpperCase();
       if (userRoleSpan) {
-        const isAdmin = user.role === 'admin';
-        userRoleSpan.textContent = isAdmin ? 'Admin' : 'Operador';
+        userRoleSpan.textContent = isAdmin ? 'Administrador' : 'Operador';
         userRoleSpan.className = isAdmin
-          ? 'text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60'
-          : 'text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60';
+          ? 'text-[10px] font-semibold text-blue-600 dark:text-blue-400'
+          : 'text-[10px] font-medium text-slate-500 dark:text-slate-400';
       }
+
+      if (menuBtn) {
+        menuBtn.setAttribute('title', `${displayName} (${isAdmin ? 'Administrador' : 'Operador'})`);
+      }
+
+      if (legacyUserDisplay) {
+        legacyUserDisplay.classList.remove('hidden');
+        legacyUserDisplay.classList.add('flex');
+      }
+      if (legacyUserName) legacyUserName.textContent = displayName;
+      if (legacyUserRole) legacyUserRole.textContent = isAdmin ? 'Admin' : 'Operador';
     }
 
-    // Exibe botão de gerenciamento de usuários se for admin
+    // Exibe botão de gerenciamento de usuários no menu caso seja admin
     if (adminMenuBtn) {
       if (user && user.role === 'admin') {
         adminMenuBtn.classList.remove('hidden');
