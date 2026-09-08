@@ -166,42 +166,35 @@
 
           <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
 
-          <!-- Unified User Profile & Action Pill -->
+          <!-- User Profile Display Badge -->
           <div
             id="user-profile-display"
-            class="hidden flex items-center gap-2 pl-2 pr-1.5 py-1 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 transition-all shadow-2xs"
+            class="hidden h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 items-center gap-2 shadow-2xs select-none"
           >
-            <!-- User Avatar Initial -->
-            <div class="w-7 h-7 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-xs shadow-blue-500/20 shrink-0">
-              <span id="user-profile-initial">A</span>
-            </div>
-
-            <!-- Name and Role -->
-            <div class="flex flex-col text-left mr-0.5 max-w-[90px] sm:max-w-[130px]">
-              <span id="user-profile-name" class="text-xs font-bold leading-tight text-slate-800 dark:text-slate-100 truncate">Admin</span>
-              <span id="user-profile-role" class="text-[9px] font-semibold text-blue-600 dark:text-blue-400 leading-none mt-0.5">Administrador</span>
-            </div>
-
-            <!-- Admin Users Button (Integrated) -->
-            <button
-              id="admin-users-btn"
-              type="button"
-              class="hidden w-7 h-7 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 flex items-center justify-center transition-all cursor-pointer"
-              title="Gerenciar Usuários da Equipe"
-            >
-              <i class="fa-solid fa-users-gear text-xs"></i>
-            </button>
-
-            <!-- Logout Button (Integrated) -->
-            <button
-              id="logout-btn"
-              type="button"
-              class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer"
-              title="Sair / Desconectar da Sessão"
-            >
-              <i class="fa-solid fa-right-from-bracket text-xs"></i>
-            </button>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span id="user-profile-name" class="text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[100px] truncate">Admin</span>
+            <span id="user-profile-role" class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">Admin</span>
           </div>
+
+          <!-- Admin Users Management Button -->
+          <button
+            id="admin-users-btn"
+            type="button"
+            class="hidden w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Gerenciar Usuários da Equipe de TI"
+          >
+            <i class="fa-solid fa-users-gear text-xs"></i>
+          </button>
+
+          <!-- Logout Button -->
+          <button
+            id="logout-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-400 hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Sair / Desconectar da Sessão"
+          >
+            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+          </button>
         </div>
 
       </div>

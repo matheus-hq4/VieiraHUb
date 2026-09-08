@@ -158,21 +158,21 @@ export class AuthManager {
   static updateUserBadge() {
     const user = AuthManager.getCurrentUser();
     const userDisplay = document.getElementById('user-profile-display');
-    const userInitialSpan = document.getElementById('user-profile-initial');
     const userNameSpan = document.getElementById('user-profile-name');
     const userRoleSpan = document.getElementById('user-profile-role');
     const adminMenuBtn = document.getElementById('admin-users-btn');
 
     if (user && userDisplay) {
       userDisplay.classList.remove('hidden');
+      userDisplay.classList.add('flex');
       const displayName = user.name || user.username || 'Admin';
       if (userNameSpan) userNameSpan.textContent = displayName;
-      if (userInitialSpan) userInitialSpan.textContent = displayName.charAt(0).toUpperCase();
       if (userRoleSpan) {
-        userRoleSpan.textContent = user.role === 'admin' ? 'Administrador' : 'Operador';
-        userRoleSpan.className = user.role === 'admin'
-          ? 'text-[9px] font-semibold text-blue-600 dark:text-blue-400 leading-none mt-0.5'
-          : 'text-[9px] font-medium text-slate-500 dark:text-slate-400 leading-none mt-0.5';
+        const isAdmin = user.role === 'admin';
+        userRoleSpan.textContent = isAdmin ? 'Admin' : 'Operador';
+        userRoleSpan.className = isAdmin
+          ? 'text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60'
+          : 'text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60';
       }
     }
 
@@ -180,8 +180,10 @@ export class AuthManager {
     if (adminMenuBtn) {
       if (user && user.role === 'admin') {
         adminMenuBtn.classList.remove('hidden');
+        adminMenuBtn.classList.add('flex');
       } else {
         adminMenuBtn.classList.add('hidden');
+        adminMenuBtn.classList.remove('flex');
       }
     }
   }
