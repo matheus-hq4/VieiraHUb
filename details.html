@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="pt-BR" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anotações & Detalhes da Ferramenta - VieiraTech HUB</title>
+    <meta name="description" content="Painel de anotações, documentação técnica, credenciais de teste e diagnósticos da ferramenta." />
+
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- Tailwind CSS (Play CDN with class-based Dark Mode configuration) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Marked.js CDN for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white transition-colors duration-200">
+
+    <!-- 1. HEADER -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        
+        <!-- Back to Hub & Tool Identifier -->
+        <div class="flex items-center gap-3">
+          <a
+            href="/"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
+            title="Voltar para a página inicial do HUB"
+          >
+            <i class="fa-solid fa-arrow-left text-xs"></i>
+            <span>Voltar ao HUB</span>
+          </a>
+
+          <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+
+          <div class="flex items-center gap-2">
+            <h1 id="header-tool-name" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+              Carregando...
+            </h1>
+            <span id="header-tool-category" class="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+              Infraestrutura
+            </span>
+          </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-2">
+          <!-- Mapeamento & Logins AD Link -->
+          <a
+            href="/logins.html"
+            class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Mapeamento Organizacional & Logins AD"
+          >
+            <i class="fa-solid fa-users-viewfinder text-xs text-blue-500"></i>
+            <span class="hidden sm:inline">Logins AD</span>
+          </a>
+
+          <!-- Dark Mode Toggle -->
+          <button
+            id="toggle-theme-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Alternar tema claro/escuro"
+          >
+            <i id="theme-toggle-icon" class="fa-solid fa-moon text-slate-600 text-xs"></i>
+          </button>
+
+          <!-- Launch External App Button -->
+          <a
+            id="header-launch-btn"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Acessar Painel</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+
+          <!-- Logout Button -->
+          <button
+            id="logout-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs ml-0.5"
+            title="Sair / Desconectar da sessão"
+          >
+            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- 2. MAIN CONTENT GRID -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT COLUMN: TECHNICAL DETAILS & DIAGNOSTICS (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          
+          <!-- Identity Card -->
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div class="flex items-start gap-4 mb-4">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-2xl shadow-md shadow-blue-500/20 shrink-0">
+                <i id="tool-icon" class="fa-solid fa-server"></i>
+              </div>
+              <div>
+                <h2 id="tool-name" class="text-lg font-bold text-slate-900 dark:text-white leading-snug">
+                  Carregando...
+                </h2>
+                <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <span id="tool-category" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+                    Infraestrutura
+                  </span>
+                  <span id="tool-environment" class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    Produção
+                  </span>
+                  <span id="tool-protocol" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    HTTPS
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <p id="tool-description" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
+              Descrição do serviço...
+            </p>
+
+            <!-- IP / URL Box -->
+            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 mb-4">
+              <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                Endereço de Acesso / Host
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <span id="tool-url" class="font-mono text-xs text-slate-800 dark:text-slate-200 truncate select-all">
+                  192.168.1.1
+                </span>
+                <button
+                  id="copy-ip-btn"
+                  type="button"
+                  class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                  title="Copiar IP ou URL"
+                >
+                  <i class="fa-regular fa-copy text-xs"></i>
+                  <span>Copiar</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Port and Launch CTA -->
+            <div class="flex items-center justify-between gap-3 pt-2">
+              <span id="tool-port" class="text-xs font-mono text-slate-500 dark:text-slate-400">
+                Porta: 443
+              </span>
+              <a
+                id="main-launch-btn"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>Abrir Aplicação</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Terminal Diagnostics Box -->
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-terminal text-blue-500"></i>
+              <span>Comandos Rápidos de Diagnóstico</span>
+            </h3>
+
+            <!-- Ping Helper -->
+            <div class="space-y-3">
+              <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0 font-mono text-xs text-emerald-400 truncate">
+                  <span class="text-slate-600 select-none">$</span>
+                  <span id="cmd-ping" class="truncate select-all">ping 127.0.0.1</span>
+                </div>
+                <button
+                  id="copy-ping-btn"
+                  type="button"
+                  class="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  title="Copiar comando ping"
+                >
+                  <i class="fa-regular fa-copy text-xs"></i>
+                </button>
+              </div>
+
+              <!-- PowerShell Test-NetConnection Helper -->
+              <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0 font-mono text-xs text-blue-400 truncate">
+                  <span class="text-slate-600 select-none">PS &gt;</span>
+                  <span id="cmd-powershell" class="truncate select-all">Test-NetConnection -ComputerName 127.0.0.1 -Port 80</span>
+                </div>
+                <button
+                  id="copy-powershell-btn"
+                  type="button"
+                  class="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  title="Copiar comando PowerShell"
+                >
+                  <i class="fa-regular fa-copy text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: CLEAN NOTEPAD / BLOCO DE NOTAS (7 Cols) -->
+        <div class="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col min-h-[580px]">
+          
+          <!-- Notepad Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm">
+                <i class="fa-regular fa-note-sticky"></i>
+              </div>
+              <div>
+                <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Bloco de Notas</span>
+                </h2>
+                <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                  Escreva livremente observações, comandos, senhas temporárias e procedimentos.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+              <!-- Auto-save Status Indicator -->
+              <div id="save-status" class="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/60">
+                <i class="fa-solid fa-check text-emerald-500 text-xs"></i>
+                <span>Salvo</span>
+              </div>
+
+              <!-- Quick Actions -->
+              <button
+                id="copy-notes-btn"
+                type="button"
+                class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Copiar todo o texto"
+              >
+                <i class="fa-regular fa-copy text-xs"></i>
+                <span class="hidden sm:inline">Copiar</span>
+              </button>
+
+              <button
+                id="download-notes-btn"
+                type="button"
+                class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Baixar como arquivo de texto .txt"
+              >
+                <i class="fa-solid fa-download text-xs"></i>
+                <span class="hidden sm:inline">Baixar .txt</span>
+              </button>
+
+              <button
+                id="clear-notes-btn"
+                type="button"
+                class="p-1.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                title="Limpar bloco de notas"
+              >
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Clean Full-Height Textarea -->
+          <div class="flex-1 flex flex-col relative">
+            <textarea
+              id="notes-textarea"
+              placeholder="Clique aqui e comece a digitar suas anotações... (Tudo é salvo automaticamente no seu navegador)"
+              class="w-full flex-1 p-4 text-xs sm:text-sm font-mono rounded-2xl bg-slate-50/80 dark:bg-slate-950/80 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-950 leading-relaxed resize-none transition-all shadow-inner"
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+          <!-- Notepad Status Bar -->
+          <div class="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+            <div class="flex items-center gap-3">
+              <span id="notes-line-count">Linhas: 1</span>
+              <span>&bull;</span>
+              <span id="notes-char-count">Caracteres: 0</span>
+            </div>
+            <div>
+              <span>Persistência Local (Offline Ready)</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- 3. FOOTER -->
+    <footer class="mt-auto border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-bold text-slate-700 dark:text-slate-200">VieiraTech HUB</span>
+          <span class="text-slate-400 dark:text-slate-600">&bull;</span>
+          <span>Central de Anotações & Documentação Técnica</span>
+        </div>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+          Suporta sintaxe Markdown e persistência local
+        </p>
+      </div>
+    </footer>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div
+      id="toast-container"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"
+    >
+      <div class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-800 dark:border-slate-200 text-xs font-semibold">
+        <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600 text-sm"></i>
+        <span id="toast-message">Mensagem de feedback</span>
+      </div>
+    </div>
+
+    <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
+    <div id="login-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+      <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-2xl relative overflow-hidden animate-fade-in">
+        
+        <!-- Glow deco -->
+        <div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-600/20 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/25 mx-auto mb-3">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">VIEIRATECH</span>
+            <span class="text-xs px-1.5 py-0.5 rounded-md font-black bg-blue-600 text-white tracking-wide">HUB</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Acesso restrito para a equipe de TI e Infraestrutura
+          </p>
+        </div>
+
+        <!-- Error message banner -->
+        <div id="login-error-msg" class="hidden mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>
+          <span>Usuário ou senha incorretos.</span>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Usuário
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-user text-xs"></i>
+              </div>
+              <input
+                id="login-username"
+                type="text"
+                required
+                autocomplete="username"
+                placeholder="vieiratech"
+                class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-sans"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Senha de Acesso
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-lock text-xs"></i>
+              </div>
+              <input
+                id="login-password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full pl-9 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+              <button
+                id="toggle-pass-visibility"
+                type="button"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                title="Mostrar / ocultar senha"
+              >
+                <i class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-1">
+            <label class="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+              <input
+                id="login-remember"
+                type="checkbox"
+                checked
+                class="rounded-md text-blue-600 focus:ring-blue-500 dark:bg-slate-800"
+              />
+              <span>Manter conectado</span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+          >
+            <span>Entrar no HUB</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- DETAILS APP SCRIPT -->
+    <script type="module" src="/js/details.js"></script>
+  </body>
+</html>
