@@ -3,15 +3,20 @@ import { AuthManager } from './auth.js';
 
 class ToolDetailsApp {
   constructor() {
-    this.tools = loadTools();
+    this.tools = [];
     this.isDarkMode = loadTheme();
     this.tool = null;
     this.autoSaveTimer = null;
 
     this.initTheme();
-    this.loadToolFromUrl();
     this.initDOMElements();
     this.bindEvents();
+    this.initData();
+  }
+
+  async initData() {
+    this.tools = await loadTools();
+    this.loadToolFromUrl();
     this.render();
   }
 
@@ -182,12 +187,12 @@ class ToolDetailsApp {
     }
   }
 
-  saveNotes(notesContent) {
+  async saveNotes(notesContent) {
     if (!this.tool) return;
 
     this.tool.notes = notesContent;
     this.tools = this.tools.map((t) => (t.id === this.tool.id ? { ...t, notes: notesContent } : t));
-    saveTools(this.tools);
+    await saveTools(this.tools);
 
     if (this.saveStatus) {
       this.saveStatus.innerHTML = '<i class="fa-solid fa-check text-emerald-500 text-xs"></i><span>Salvo</span>';

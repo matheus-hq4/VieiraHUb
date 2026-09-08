@@ -1,101 +1,9 @@
 /**
  * Módulo de Gerenciamento de Senhas Corporativas & Gerador de Senhas (Cofre de TI)
+ * Conectado à API segura do servidor (/api/vault) - Zero senhas estáticas no front-end!
  */
 
-const VAULT_STORAGE_KEY = 'vieiratech_vault_passwords_v1';
-
-export const defaultVaultPasswords = [
-  {
-    id: 'pass-wifi-1',
-    title: 'Wi-Fi - Diretoria & Gerência',
-    category: 'Wi-Fi',
-    username: 'VieiraCred_Diretoria',
-    password: 'Dir@Cred#2026!Wf',
-    notes: 'SSID oculto na rede corporativa 5GHz. Roteadores Ubiquiti.',
-    updatedAt: '2026-03-01'
-  },
-  {
-    id: 'pass-wifi-2',
-    title: 'Wi-Fi - Operação & Geral',
-    category: 'Wi-Fi',
-    username: 'VieiraCred_Corporativo',
-    password: 'Op3r@c4o#Vcred26',
-    notes: 'VLAN 30 isolada. Distribuição via DHCP com controle de banda.',
-    updatedAt: '2026-03-01'
-  },
-  {
-    id: 'pass-wifi-3',
-    title: 'Wi-Fi - Visitantes / Clientes',
-    category: 'Wi-Fi',
-    username: 'VieiraCred_Visitantes',
-    password: 'B3m-Vindo@Vieira26',
-    notes: 'Rede guest com isolamento de clientes (Client Isolation ativo).',
-    updatedAt: '2026-03-01'
-  },
-  {
-    id: 'pass-ti-1',
-    title: 'Acesso Root - Servidores Linux (Debian / Proxmox)',
-    category: 'Infra TI',
-    username: 'root',
-    password: 'R00t#Adm!Vtech2026',
-    notes: 'Acesso apenas via rede de gerenciamento ou SSH key.',
-    updatedAt: '2026-02-15'
-  },
-  {
-    id: 'pass-ti-2',
-    title: 'Conta Admin - Active Directory / Controlador de Domínio',
-    category: 'Infra TI',
-    username: 'CORP\\administrator',
-    password: '$Adm1n@DC01#VieiraTech',
-    notes: 'DC primário (ad-dc01.corp.local). Não usar em estações comuns.',
-    updatedAt: '2026-02-10'
-  },
-  {
-    id: 'pass-ti-3',
-    title: 'MikroTik Borda - Usuário Winbox Master',
-    category: 'Infra TI',
-    username: 'admin_vieiratech',
-    password: 'M1kr0#B0rd4!2026Tech',
-    notes: 'Porta Winbox alterada para 8728. IP 192.168.88.1.',
-    updatedAt: '2026-02-20'
-  },
-  {
-    id: 'pass-ti-4',
-    title: 'Switch Core Gigabit - Gerenciamento Web',
-    category: 'Infra TI',
-    username: 'admin',
-    password: 'Sw1tch#Core!Vtech26',
-    notes: 'IP 192.168.88.2. VLAN de gerência 99.',
-    updatedAt: '2026-01-20'
-  },
-  {
-    id: 'pass-srv-1',
-    title: 'TrueNAS Enterprise - Console Web GUI',
-    category: 'Servidores',
-    username: 'admin',
-    password: 'Tru3N4s#St0r@g3!26',
-    notes: 'Pool ZFS de backup e compartilhamento corporativo.',
-    updatedAt: '2026-02-25'
-  },
-  {
-    id: 'pass-srv-2',
-    title: 'Portainer CE / Docker Stacks',
-    category: 'Servidores',
-    username: 'admin',
-    password: 'P0rt41n3r#D0ck3r!26',
-    notes: 'Gerenciador dos containers n8n, Zabbix e GLPI.',
-    updatedAt: '2026-02-28'
-  },
-  {
-    id: 'pass-srv-3',
-    title: 'pfSense Firewall - Painel HTTPS',
-    category: 'Servidores',
-    username: 'admin',
-    password: 'pfS3ns3#F1r3w4ll!26',
-    notes: 'IP de gestão: 192.168.88.254:8443.',
-    updatedAt: '2026-02-18'
-  }
-];
+import { api } from './api.js';
 
 export class PasswordGenerator {
   static generate({
@@ -108,7 +16,7 @@ export class PasswordGenerator {
     const charsUpper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const charsLower = 'abcdefghijklmnopqrstuvwxyz';
     const charsNum = '0123456789';
-    const charsSym = '!@#$%^&*()_+~`|}{[]:;?><,.-=';
+    const charsSym = '!@#$%^&*()_+-=[]{}|;:,.<>?';
 
     let pool = '';
     let guaranteed = '';
@@ -139,7 +47,7 @@ export class PasswordGenerator {
       result += pool[Math.floor(Math.random() * pool.length)];
     }
 
-    // Shuffle characters
+    // Embaralha os caracteres
     return result
       .split('')
       .sort(() => 0.5 - Math.random())
@@ -150,7 +58,7 @@ export class PasswordGenerator {
 export class VaultManager {
   constructor(showToastCallback) {
     this.showToast = showToastCallback;
-    this.passwords = this.loadPasswords();
+    this.passwords = [];
     this.searchTerm = '';
     this.activeCategory = 'Todos';
     this.revealedSet = new Set();
@@ -158,27 +66,24 @@ export class VaultManager {
 
     this.initDOMElements();
     this.bindEvents();
+    this.loadPasswords();
   }
 
-  loadPasswords() {
+  async loadPasswords() {
     try {
-      const saved = localStorage.getItem(VAULT_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (api.isAuthenticated()) {
+        const data = await api.get('/api/vault');
+        if (Array.isArray(data)) {
+          this.passwords = data;
+          this.render();
+          return;
+        }
       }
     } catch (e) {
-      console.error('Erro ao ler cofre de senhas:', e);
+      console.error('[Vault] Erro ao carregar senhas da API:', e);
     }
-    return [...defaultVaultPasswords];
-  }
-
-  savePasswords() {
-    try {
-      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(this.passwords));
-    } catch (e) {
-      console.error('Erro ao salvar cofre de senhas:', e);
-    }
+    this.passwords = [];
+    this.render();
   }
 
   initDOMElements() {
@@ -189,7 +94,7 @@ export class VaultManager {
     this.totalCounter = document.getElementById('vault-total-count');
     this.filteredCounter = document.getElementById('vault-filtered-count');
 
-    // Add / Edit Modal
+    // Modal Adicionar / Editar
     this.modal = document.getElementById('vault-modal');
     this.modalTitle = document.getElementById('vault-modal-title');
     this.modalForm = document.getElementById('vault-modal-form');
@@ -197,7 +102,7 @@ export class VaultManager {
     this.closeModalBtn = document.getElementById('vault-modal-close-btn');
     this.cancelModalBtn = document.getElementById('vault-modal-cancel-btn');
 
-    // Generator Modal / Popover
+    // Modal Gerador de Senhas
     this.generatorModal = document.getElementById('generator-modal');
     this.openGeneratorBtn = document.getElementById('open-generator-btn');
     this.closeGeneratorBtn = document.getElementById('generator-modal-close-btn');
@@ -208,7 +113,7 @@ export class VaultManager {
     this.genCopyBtn = document.getElementById('gen-copy-btn');
     this.genApplyBtn = document.getElementById('gen-apply-btn');
 
-    // Generator options
+    // Opções do Gerador
     this.genOptUpper = document.getElementById('gen-opt-upper');
     this.genOptLower = document.getElementById('gen-opt-lower');
     this.genOptNumbers = document.getElementById('gen-opt-numbers');
@@ -216,7 +121,7 @@ export class VaultManager {
   }
 
   bindEvents() {
-    // Search
+    // Busca
     if (this.searchInput) {
       this.searchInput.addEventListener('input', (e) => {
         this.searchTerm = e.target.value;
@@ -240,7 +145,7 @@ export class VaultManager {
       });
     }
 
-    // Add Modal
+    // Modal de Adição
     if (this.openAddBtn) {
       this.openAddBtn.addEventListener('click', () => this.openModal());
     }
@@ -257,44 +162,46 @@ export class VaultManager {
       });
     }
 
-    // Password Generator
+    // Gerador de Senhas
     if (this.openGeneratorBtn) {
       this.openGeneratorBtn.addEventListener('click', () => this.openGenerator());
     }
     if (this.closeGeneratorBtn) {
       this.closeGeneratorBtn.addEventListener('click', () => this.closeGenerator());
     }
-    if (this.genLengthRange && this.genLengthDisplay) {
+    if (this.genLengthRange) {
       this.genLengthRange.addEventListener('input', (e) => {
-        this.genLengthDisplay.textContent = e.target.value;
+        if (this.genLengthDisplay) this.genLengthDisplay.textContent = e.target.value;
         this.generateNewPassword();
       });
     }
-    [this.genOptUpper, this.genOptLower, this.genOptNumbers, this.genOptSymbols].forEach((el) => {
-      if (el) el.addEventListener('change', () => this.generateNewPassword());
+
+    const checkInputs = [this.genOptUpper, this.genOptLower, this.genOptNumbers, this.genOptSymbols];
+    checkInputs.forEach((inp) => {
+      if (inp) {
+        inp.addEventListener('change', () => this.generateNewPassword());
+      }
     });
+
     if (this.genRefreshBtn) {
       this.genRefreshBtn.addEventListener('click', () => this.generateNewPassword());
     }
     if (this.genCopyBtn) {
       this.genCopyBtn.addEventListener('click', () => {
-        if (this.genResultInput && this.genResultInput.value) {
-          this.copyToClipboard(this.genResultInput.value, 'Senha gerada copiada com sucesso!');
+        const val = this.genResultInput?.value;
+        if (val) {
+          this.copyToClipboard(val, 'Senha gerada copiada para a área de transferência!');
         }
       });
     }
     if (this.genApplyBtn) {
       this.genApplyBtn.addEventListener('click', () => {
-        if (this.genResultInput && this.genResultInput.value) {
-          const passInput = document.getElementById('vault-form-password');
-          if (passInput) {
-            passInput.value = this.genResultInput.value;
-          }
+        const val = this.genResultInput?.value;
+        if (val) {
+          const passInput = document.getElementById('vault-password');
+          if (passInput) passInput.value = val;
+          this.showToast('Senha aplicada no formulário do cofre!');
           this.closeGenerator();
-          if (this.modal && this.modal.classList.contains('hidden')) {
-            this.openModal();
-          }
-          this.showToast('Senha gerada aplicada no formulário!');
         }
       });
     }
@@ -310,13 +217,14 @@ export class VaultManager {
   }
 
   generateNewPassword() {
-    const length = parseInt(this.genLengthRange?.value || '16', 10);
-    const uppercase = this.genOptUpper?.checked ?? true;
-    const lowercase = this.genOptLower?.checked ?? true;
-    const numbers = this.genOptNumbers?.checked ?? true;
-    const symbols = this.genOptSymbols?.checked ?? true;
-
-    const pass = PasswordGenerator.generate({ length, uppercase, lowercase, numbers, symbols });
+    const len = parseInt(this.genLengthRange?.value || '16', 10);
+    const pass = PasswordGenerator.generate({
+      length: len,
+      uppercase: this.genOptUpper?.checked ?? true,
+      lowercase: this.genOptLower?.checked ?? true,
+      numbers: this.genOptNumbers?.checked ?? true,
+      symbols: this.genOptSymbols?.checked ?? true
+    });
     if (this.genResultInput) this.genResultInput.value = pass;
   }
 
@@ -343,7 +251,7 @@ export class VaultManager {
     this.editingId = null;
   }
 
-  handleSave() {
+  async handleSave() {
     const form = this.modalForm;
     if (!form) return;
 
@@ -358,44 +266,35 @@ export class VaultManager {
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
+    const payload = { title, category, username, password, notes };
 
-    if (this.editingId) {
-      this.passwords = this.passwords.map((p) => {
-        if (p.id === this.editingId) {
-          return { ...p, title, category, username, password, notes, updatedAt: today };
-        }
-        return p;
-      });
-      this.showToast(`Senha "${title}" atualizada!`);
-    } else {
-      const newItem = {
-        id: 'pass-' + Date.now(),
-        title,
-        category,
-        username,
-        password,
-        notes,
-        updatedAt: today
-      };
-      this.passwords.unshift(newItem);
-      this.showToast(`Nova senha "${title}" cadastrada no cofre!`);
+    try {
+      if (this.editingId) {
+        await api.put(`/api/vault/${this.editingId}`, payload);
+        this.showToast(`Senha "${title}" atualizada no servidor!`);
+      } else {
+        await api.post('/api/vault', payload);
+        this.showToast(`Nova senha "${title}" cadastrada no cofre corporativo!`);
+      }
+      this.closeModal();
+      await this.loadPasswords();
+    } catch (err) {
+      alert('Erro ao salvar no servidor: ' + err.message);
     }
-
-    this.savePasswords();
-    this.closeModal();
-    this.render();
   }
 
-  handleDelete(id) {
+  async handleDelete(id) {
     const item = this.passwords.find((p) => p.id === id);
     if (!item) return;
 
-    if (window.confirm(`Tem certeza que deseja remover a credencial "${item.title}" do cofre?`)) {
-      this.passwords = this.passwords.filter((p) => p.id !== id);
-      this.savePasswords();
-      this.showToast(`Credencial "${item.title}" removida.`);
-      this.render();
+    if (window.confirm(`Tem certeza que deseja remover a credencial "${item.title}" do cofre corporativo?`)) {
+      try {
+        await api.delete(`/api/vault/${id}`);
+        this.showToast(`Credencial "${item.title}" removida do servidor.`);
+        await this.loadPasswords();
+      } catch (err) {
+        alert('Erro ao excluir do servidor: ' + err.message);
+      }
     }
   }
 
@@ -446,7 +345,7 @@ export class VaultManager {
             class="vault-cat-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
           >
             <span>${cat}</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-md font-mono font-semibold ${badgeClass}">${count}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold ${badgeClass}">${count}</span>
           </button>
         `;
       })
@@ -454,172 +353,168 @@ export class VaultManager {
 
     this.categoriesContainer.querySelectorAll('.vault-cat-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.activeCategory = btn.getAttribute('data-cat');
+        this.activeCategory = btn.getAttribute('data-cat') || 'Todos';
         this.render();
       });
     });
   }
 
-  getCategoryBadge(cat) {
-    switch (cat) {
-      case 'Wi-Fi':
-        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20';
-      case 'Infra TI':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20';
-      case 'Servidores':
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20';
-      default:
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
-    }
-  }
-
-  getCategoryIcon(cat) {
-    switch (cat) {
-      case 'Wi-Fi':
-        return 'fa-solid fa-wifi text-cyan-500';
-      case 'Infra TI':
-        return 'fa-solid fa-server text-blue-500';
-      case 'Servidores':
-        return 'fa-solid fa-hard-drive text-purple-500';
-      default:
-        return 'fa-solid fa-key text-amber-500';
-    }
-  }
-
   renderCards() {
     if (!this.container) return;
-    const items = this.getFilteredList();
+
+    const list = this.getFilteredList();
+    const isAdmin = api.isAdmin();
 
     if (this.totalCounter) this.totalCounter.textContent = this.passwords.length;
-    if (this.filteredCounter) this.filteredCounter.textContent = items.length;
+    if (this.filteredCounter) this.filteredCounter.textContent = list.length;
 
-    if (items.length === 0) {
+    if (list.length === 0) {
       this.container.innerHTML = `
-        <div class="col-span-full py-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
-          <i class="fa-solid fa-key text-3xl text-slate-400 mb-2"></i>
-          <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">Nenhuma credencial encontrada</h4>
-          <p class="text-xs text-slate-400 dark:text-slate-500">Tente buscar por outro termo ou cadastre uma nova senha.</p>
+        <div class="col-span-full py-16 text-center">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
+            <i class="fa-solid fa-key text-2xl"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">Nenhuma credencial encontrada</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            ${this.searchTerm ? 'Tente buscar com outro termo ou limpe os filtros.' : 'Cadastre sua primeira senha corporativa usando o botão acima.'}
+          </p>
         </div>
       `;
       return;
     }
 
-    this.container.innerHTML = items
+    this.container.innerHTML = list
       .map((item) => {
         const isRevealed = this.revealedSet.has(item.id);
-        const displayPass = isRevealed ? item.password : '••••••••••••';
-        const catBadge = this.getCategoryBadge(item.category);
-        const catIcon = this.getCategoryIcon(item.category);
+        const displayedPass = isRevealed ? item.password : '••••••••••••••••';
+
+        let categoryIcon = 'fa-solid fa-key';
+        let categoryColor = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+
+        if (item.category === 'Wi-Fi') {
+          categoryIcon = 'fa-solid fa-wifi';
+          categoryColor = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+        } else if (item.category === 'Infra TI') {
+          categoryIcon = 'fa-solid fa-network-wired';
+          categoryColor = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+        } else if (item.category === 'Servidores') {
+          categoryIcon = 'fa-solid fa-server';
+          categoryColor = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+        }
 
         return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 shadow-xs flex flex-col justify-between transition-all" data-id="${item.id}">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
             
-            <!-- Top Section -->
             <div>
-              <div class="flex items-start justify-between gap-2.5 mb-2.5">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm shrink-0 shadow-2xs">
-                    <i class="${catIcon}"></i>
+              <!-- Header do Cartão -->
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center border ${categoryColor}">
+                    <i class="${categoryIcon} text-sm"></i>
                   </div>
-                  <div class="min-w-0">
-                    <h4 class="font-bold text-sm text-slate-900 dark:text-white truncate" title="${item.title}">
-                      ${item.title}
-                    </h4>
-                    <span class="text-[10px] font-semibold px-2 py-0.2 rounded-md ${catBadge}">
-                      ${item.category}
-                    </span>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">${item.title}</h4>
+                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${categoryColor}">${item.category}</span>
                   </div>
                 </div>
 
-                <!-- Card Actions (Edit, Delete) -->
-                <div class="flex items-center gap-0.5 shrink-0">
+                <!-- Ações do Cartão (Editar / Excluir) -->
+                <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"
-                    class="vault-edit-btn p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
-                    title="Editar credencial"
+                    data-action="edit"
                     data-id="${item.id}"
+                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
+                    title="Editar Credencial"
                   >
-                    <i class="fa-regular fa-pen-to-square"></i>
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
                   </button>
+                  ${isAdmin ? `
                   <button
                     type="button"
-                    class="vault-delete-btn p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg text-xs transition-colors cursor-pointer"
-                    title="Excluir credencial"
+                    data-action="delete"
                     data-id="${item.id}"
+                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                    title="Excluir Credencial"
                   >
-                    <i class="fa-regular fa-trash-can"></i>
+                    <i class="fa-solid fa-trash-can text-xs"></i>
                   </button>
+                  ` : ''}
                 </div>
               </div>
 
-              <!-- Username / SSID Row -->
+              <!-- Usuário / Login (se houver) -->
               ${
                 item.username
                   ? `
-                <div class="mb-2 bg-slate-50 dark:bg-slate-950/70 border border-slate-200/70 dark:border-slate-800 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 font-mono text-xs">
-                  <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span class="text-[10px] text-slate-400 font-sans select-none">Usuário:</span>
-                    <span class="font-semibold text-slate-800 dark:text-slate-100 truncate select-all" title="${item.username}">
-                      ${item.username}
-                    </span>
+                <div class="mb-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                  <div class="flex items-center gap-2 overflow-hidden">
+                    <i class="fa-regular fa-user text-slate-400 text-xs shrink-0"></i>
+                    <span class="font-mono text-xs text-slate-700 dark:text-slate-300 truncate">${item.username}</span>
                   </div>
                   <button
                     type="button"
-                    class="vault-copy-btn p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0"
-                    title="Copiar usuário"
                     data-copy="${item.username}"
+                    data-label="Usuário"
+                    class="vault-copy-btn text-xs text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 px-1.5 py-0.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors shrink-0"
+                    title="Copiar Usuário"
                   >
-                    <i class="fa-regular fa-copy text-xs"></i>
+                    <i class="fa-regular fa-copy"></i>
                   </button>
                 </div>
               `
                   : ''
               }
 
-              <!-- Password Row with Eye & Copy -->
-              <div class="mb-2 bg-slate-50 dark:bg-slate-950/70 border border-slate-200/70 dark:border-slate-800 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2 font-mono text-xs">
-                <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                  <i class="fa-solid fa-lock text-[10px] text-slate-400 shrink-0"></i>
-                  <span class="font-semibold text-slate-800 dark:text-slate-100 truncate select-all tracking-wider" title="${isRevealed ? item.password : 'Clique no olho para revelar'}">
-                    ${displayPass}
+              <!-- Senha Protegida -->
+              <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <i class="fa-solid fa-lock text-amber-500 text-xs shrink-0"></i>
+                  <span class="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate ${isRevealed ? '' : 'tracking-widest'}">
+                    ${displayedPass}
                   </span>
                 </div>
+                
                 <div class="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
-                    class="vault-toggle-eye-btn p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                    title="${isRevealed ? 'Ocultar senha' : 'Ver senha'}"
+                    data-action="toggle-reveal"
                     data-id="${item.id}"
+                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
+                    title="${isRevealed ? 'Ocultar Senha' : 'Ver Senha'}"
                   >
-                    <i class="${isRevealed ? 'fa-regular fa-eye-slash text-blue-500' : 'fa-regular fa-eye'} text-xs"></i>
+                    <i class="${isRevealed ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'} text-xs"></i>
                   </button>
                   <button
                     type="button"
-                    class="vault-copy-btn p-1 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                    title="Copiar senha"
                     data-copy="${item.password}"
+                    data-label="Senha"
+                    class="vault-copy-btn w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
+                    title="Copiar Senha"
                   >
                     <i class="fa-regular fa-copy text-xs"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- Notes (Optional) -->
+              <!-- Observações (se houver) -->
               ${
                 item.notes
                   ? `
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mb-2 leading-relaxed bg-slate-100/60 dark:bg-slate-800/40 p-2 rounded-lg">
-                  ${item.notes}
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3 line-clamp-2">
+                  <i class="fa-regular fa-note-sticky mr-1 text-[10px] text-slate-400"></i>${item.notes}
                 </p>
               `
                   : ''
               }
             </div>
 
-            <!-- Footer date -->
-            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Atualizado:</span>
-              <span>${item.updatedAt || 'Recente'}</span>
+            <!-- Rodapé do Cartão -->
+            <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+              <span>Atualizado: ${item.updatedAt || 'Recente'}</span>
+              <span class="text-emerald-500 flex items-center gap-1 font-sans font-medium">
+                <i class="fa-solid fa-shield-halved text-[9px]"></i> Servidor
+              </span>
             </div>
 
           </div>
@@ -631,21 +526,27 @@ export class VaultManager {
   }
 
   bindCardEvents() {
-    // Copy button
-    this.container.querySelectorAll('.vault-copy-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const text = btn.getAttribute('data-copy');
-        if (text) {
-          this.copyToClipboard(text, 'Copiado para a área de transferência!');
-        }
+    if (!this.container) return;
+
+    // Ações de Editar e Excluir
+    this.container.querySelectorAll('button[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const item = this.passwords.find((p) => p.id === id);
+        if (item) this.openModal(item);
       });
     });
 
-    // Eye toggle
-    this.container.querySelectorAll('.vault-toggle-eye-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
+    this.container.querySelectorAll('button[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (id) this.handleDelete(id);
+      });
+    });
+
+    // Alternar Visualização da Senha
+    this.container.querySelectorAll('button[data-action="toggle-reveal"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         if (id) {
           if (this.revealedSet.has(id)) {
@@ -658,32 +559,38 @@ export class VaultManager {
       });
     });
 
-    // Edit
-    this.container.querySelectorAll('.vault-edit-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-id');
-        const item = this.passwords.find((p) => p.id === id);
-        if (item) this.openModal(item);
-      });
-    });
-
-    // Delete
-    this.container.querySelectorAll('.vault-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-id');
-        if (id) this.handleDelete(id);
+    // Copiar para área de transferência
+    this.container.querySelectorAll('.vault-copy-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const text = btn.getAttribute('data-copy');
+        const label = btn.getAttribute('data-label') || 'Item';
+        if (text) {
+          this.copyToClipboard(text, `${label} copiado para a área de transferência!`);
+        }
       });
     });
   }
 
-  copyToClipboard(text, msg) {
-    navigator.clipboard.writeText(text).then(() => {
-      this.showToast(msg || 'Copiado!');
-    }).catch(() => {
-      this.showToast('Falha ao copiar.');
-    });
+  copyToClipboard(text, successMessage) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast(successMessage);
+      });
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        this.showToast(successMessage);
+      } catch (err) {
+        console.error('Falha ao copiar:', err);
+      }
+      document.body.removeChild(textarea);
+    }
   }
 
   render() {

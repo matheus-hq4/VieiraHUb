@@ -1,16 +1,15 @@
-import { loadTools, saveTools, resetToDefaults, loadTheme, saveTheme } from './storage.js';
+import { loadTools, saveTools, deleteTool, resetToDefaults, loadTheme, saveTheme } from './storage.js';
 import { ChatbotManager } from './chatbot.js';
 import { AuthManager } from './auth.js';
 import { VaultManager } from './vault.js';
 import { InventoryManager } from './inventory.js';
-import { defaultLoginsText } from './defaultLogins.js';
+import { api } from './api.js';
 
 const TAB_STORAGE_KEY = 'vieiratech_active_tab_v1';
-const AD_STORAGE_KEY = 'vieiratech_mapeamento_logins_v1';
 
 class App {
   constructor() {
-    this.tools = loadTools();
+    this.tools = [];
     this.isDarkMode = loadTheme();
     this.searchTerm = '';
     this.activeCategory = 'Todos';
@@ -22,7 +21,7 @@ class App {
     this.activeTab = localStorage.getItem(TAB_STORAGE_KEY) || 'apps';
 
     // AD Logins in 4th tab
-    this.adRawText = this.loadAdLogins();
+    this.adRawText = '';
     this.adSearchTerm = '';
     this.adRevealedPasswords = new Set();
 
@@ -31,18 +30,30 @@ class App {
     this.initModules();
     this.initChatbot();
     this.bindEvents();
+    this.initUserManagement();
     this.switchTab(this.activeTab, false);
-    this.render();
+    this.loadInitialData();
   }
 
-  loadAdLogins() {
+  async loadInitialData() {
     try {
-      const saved = localStorage.getItem(AD_STORAGE_KEY);
-      if (saved && saved.trim().length > 0) return saved;
+      this.tools = await loadTools();
+      this.adRawText = await this.loadAdLogins();
+      this.render();
+      this.renderAdPane();
     } catch (e) {
-      console.error('Erro ao ler mapeamento AD:', e);
+      console.error('[App] Erro ao carregar dados iniciais:', e);
     }
-    return defaultLoginsText;
+  }
+
+  async loadAdLogins() {
+    try {
+      const data = await api.get('/api/ad-logins');
+      return data.rawText || '';
+    } catch (e) {
+      console.error('[App] Erro ao ler mapeamento AD do servidor:', e);
+      return '';
+    }
   }
 
   initModules() {
@@ -726,7 +737,7 @@ class App {
     });
   }
 
-  handleTogglePin(id) {
+  async handleTogglePin(id) {
     this.tools = this.tools.map((t) => {
       if (t.id === id) {
         const nextState = !t.pinned;
@@ -735,16 +746,20 @@ class App {
       }
       return t;
     });
-    saveTools(this.tools);
+    await saveTools(this.tools);
     this.render();
   }
 
-  handleDeleteTool(id) {
+  async handleDeleteTool(id) {
     const target = this.tools.find((t) => t.id === id);
-    this.tools = this.tools.filter((t) => t.id !== id);
-    saveTools(this.tools);
-    this.showToast(`Ferramenta "${target?.name || ''}" removida com sucesso.`);
-    this.render();
+    try {
+      await deleteTool(id);
+      this.tools = this.tools.filter((t) => t.id !== id);
+      this.showToast(`Ferramenta "${target?.name || ''}" removida com sucesso.`);
+      this.render();
+    } catch (e) {
+      alert('Erro ao excluir ferramenta: ' + e.message);
+    }
   }
 
   openToolModal(tool = null) {
@@ -866,7 +881,11 @@ class App {
       this.showToast(`Nova ferramenta "${name}" cadastrada com sucesso!`);
     }
 
-    saveTools(this.tools);
+    try {
+      await saveTools(this.tools);
+    } catch (e) {
+      alert('Erro ao salvar ferramenta no servidor: ' + e.message);
+    }
     this.closeToolModal();
     this.render();
   }
@@ -887,19 +906,19 @@ class App {
     }
   }
 
-  handleSaveJson() {
+  async handleSaveJson() {
     try {
       const parsed = JSON.parse(this.jsonTextarea.value);
       if (!Array.isArray(parsed)) {
         throw new Error('O JSON deve ser um array de ferramentas.');
       }
       this.tools = parsed;
-      saveTools(this.tools);
-      this.showToast('JSON importado e salvo com sucesso!');
+      await saveTools(this.tools);
+      this.showToast('JSON importado e salvo com sucesso no servidor!');
       this.closeJsonModal();
       this.render();
     } catch (err) {
-      alert('Erro ao validar JSON: ' + err.message);
+      alert('Erro ao validar ou salvar JSON: ' + err.message);
     }
   }
 
@@ -998,6 +1017,116 @@ class App {
         return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400';
       default:
         return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300';
+    }
+  }
+
+  initUserManagement() {
+    this.adminUsersBtn = document.getElementById('admin-users-btn');
+    this.usersModal = document.getElementById('users-modal');
+    this.usersModalCloseBtn = document.getElementById('users-modal-close-btn');
+    this.newUserForm = document.getElementById('new-user-form');
+    this.usersTableBody = document.getElementById('users-table-body');
+    this.usersCountBadge = document.getElementById('users-count-badge');
+
+    if (this.adminUsersBtn) {
+      this.adminUsersBtn.addEventListener('click', () => {
+        this.openUsersModal();
+      });
+    }
+
+    if (this.usersModalCloseBtn) {
+      this.usersModalCloseBtn.addEventListener('click', () => {
+        if (this.usersModal) this.usersModal.classList.add('hidden');
+      });
+    }
+
+    if (this.newUserForm) {
+      this.newUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('user-form-name')?.value?.trim();
+        const username = document.getElementById('user-form-username')?.value?.trim();
+        const password = document.getElementById('user-form-password')?.value?.trim();
+        const role = document.getElementById('user-form-role')?.value || 'operador';
+
+        if (!name || !username || !password) {
+          alert('Preencha todos os campos.');
+          return;
+        }
+
+        try {
+          await api.post('/api/users', { name, username, password, role });
+          this.showToast(`Usuário "${username}" criado com sucesso!`);
+          this.newUserForm.reset();
+          await this.loadUsersTable();
+        } catch (err) {
+          alert('Erro ao criar usuário: ' + err.message);
+        }
+      });
+    }
+  }
+
+  async openUsersModal() {
+    if (!api.isAdmin()) {
+      alert('Acesso restrito apenas para administradores.');
+      return;
+    }
+    if (this.usersModal) this.usersModal.classList.remove('hidden');
+    await this.loadUsersTable();
+  }
+
+  async loadUsersTable() {
+    if (!this.usersTableBody) return;
+    try {
+      const users = await api.get('/api/users');
+      if (this.usersCountBadge) this.usersCountBadge.textContent = users.length;
+
+      const currentLogged = AuthManager.getCurrentUser();
+
+      this.usersTableBody.innerHTML = users.map((u) => {
+        const isSelf = currentLogged && currentLogged.id === u.id;
+        const roleBadge = u.role === 'admin'
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">Administrador</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-500/20 text-slate-400 border border-slate-500/30">Técnico / Operador</span>';
+
+        return `
+          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+            <td class="px-3.5 py-2.5 font-medium text-slate-800 dark:text-slate-200">${u.name}</td>
+            <td class="px-3.5 py-2.5 font-mono text-slate-600 dark:text-slate-400">${u.username}</td>
+            <td class="px-3.5 py-2.5">${roleBadge}</td>
+            <td class="px-3.5 py-2.5 text-right">
+              ${isSelf ? '<span class="text-[11px] text-slate-400 italic">Conectado</span>' : `
+                <button
+                  type="button"
+                  data-user-id="${u.id}"
+                  data-username="${u.username}"
+                  class="user-delete-btn text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition-colors cursor-pointer"
+                  title="Excluir Usuário"
+                >
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      this.usersTableBody.querySelectorAll('.user-delete-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-user-id');
+          const username = btn.getAttribute('data-username');
+          if (window.confirm(`Deseja realmente remover o usuário "${username}"?`)) {
+            try {
+              await api.delete('/api/users/' + id);
+              this.showToast(`Usuário "${username}" removido.`);
+              await this.loadUsersTable();
+            } catch (err) {
+              alert('Erro ao excluir usuário: ' + err.message);
+            }
+          }
+        });
+      });
+    } catch (err) {
+      console.error('Erro ao carregar usuários:', err);
     }
   }
 

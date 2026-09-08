@@ -9,4 +9,7 @@ coverage/
 !.env.example
 backup_v1/
 backup_v2/
+backup_principal/
 scratch/
+data/
+logs/

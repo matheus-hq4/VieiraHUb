@@ -1,47 +1,51 @@
-import { defaultToolsList } from './data.js';
+import { api } from './api.js';
 
-const TOOLS_STORAGE_KEY = 'vieiratech_hub_tools_list_v1';
 const THEME_STORAGE_KEY = 'vieiratech_hub_theme_v1';
 
 /**
- * Carrega a lista de ferramentas do localStorage ou retorna o padrão.
- * @returns {Array} Lista de ferramentas
+ * Carrega a lista de ferramentas da API do servidor.
+ * @returns {Promise<Array>} Lista de ferramentas
  */
-export function loadTools() {
+export async function loadTools() {
   try {
-    const saved = localStorage.getItem(TOOLS_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+    if (api.isAuthenticated()) {
+      const data = await api.get('/api/tools');
+      if (Array.isArray(data)) {
+        return data;
       }
     }
   } catch (error) {
-    console.error('Erro ao ler ferramentas do localStorage:', error);
+    console.error('[Storage] Erro ao carregar ferramentas do servidor:', error);
   }
-  return [...defaultToolsList];
+  return [];
 }
 
 /**
- * Salva a lista de ferramentas no localStorage.
+ * Salva a lista de ferramentas no servidor.
  * @param {Array} tools
  */
-export function saveTools(tools) {
+export async function saveTools(tools) {
   try {
-    localStorage.setItem(TOOLS_STORAGE_KEY, JSON.stringify(tools));
+    if (api.isAuthenticated()) {
+      return await api.post('/api/tools', tools);
+    }
   } catch (error) {
-    console.error('Erro ao salvar ferramentas no localStorage:', error);
+    console.error('[Storage] Erro ao salvar ferramentas no servidor:', error);
+    throw error;
   }
 }
 
 /**
- * Restaura a lista de ferramentas para os valores padrão.
- * @returns {Array} Lista padrão de ferramentas
+ * Exclui uma ferramenta do servidor (Admin)
+ * @param {string} id
  */
-export function resetToDefaults() {
-  const defaults = [...defaultToolsList];
-  saveTools(defaults);
-  return defaults;
+export async function deleteTool(id) {
+  try {
+    return await api.delete(`/api/tools/${id}`);
+  } catch (error) {
+    console.error('[Storage] Erro ao excluir ferramenta:', error);
+    throw error;
+  }
 }
 
 /**
@@ -68,6 +72,6 @@ export function saveTheme(isDark) {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
   } catch (error) {
-    console.error('Erro ao salvar tema:', error);
+    console.error('[Storage] Erro ao salvar tema:', error);
   }
 }

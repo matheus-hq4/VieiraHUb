@@ -1,143 +1,38 @@
 /**
  * Módulo de Controle de Estoque de TI (Inventário de Equipamentos & Periféricos)
+ * Conectado à API centralizada do servidor (/api/inventory)
  */
 
-const INVENTORY_STORAGE_KEY = 'vieiratech_inventory_items_v1';
-
-export const defaultInventoryItems = [
-  {
-    id: 'inv-1',
-    name: 'Headset USB com Cancelamento de Ruído (Intelbras/Jabra)',
-    category: 'Periféricos',
-    quantity: 14,
-    minQuantity: 5,
-    location: 'Armário TI - Prateleira 1',
-    status: 'Disponível',
-    notes: 'Uso prioritário para os operadores e supervisores da VieiraCred.'
-  },
-  {
-    id: 'inv-2',
-    name: 'Mouse Óptico USB Dell / Logitech',
-    category: 'Periféricos',
-    quantity: 8,
-    minQuantity: 4,
-    location: 'Armário TI - Gaveta 2',
-    status: 'Disponível',
-    notes: 'Mouses novos padrão ABNT.'
-  },
-  {
-    id: 'inv-3',
-    name: 'Teclado USB Slim Dell / Multilaser',
-    category: 'Periféricos',
-    quantity: 6,
-    minQuantity: 4,
-    location: 'Armário TI - Gaveta 2',
-    status: 'Disponível',
-    notes: 'Teclados ABNT2 com teclado numérico.'
-  },
-  {
-    id: 'inv-4',
-    name: 'Patch Cord Cat6 Azul Furukawa 1.5m',
-    category: 'Cabos',
-    quantity: 28,
-    minQuantity: 10,
-    location: 'Armário TI - Caixa Cabos',
-    status: 'Disponível',
-    notes: 'Cabos de rede homologados para pontos de estações.'
-  },
-  {
-    id: 'inv-5',
-    name: 'Patch Cord Cat6 Amarelo Furukawa 2.5m',
-    category: 'Cabos',
-    quantity: 15,
-    minQuantity: 8,
-    location: 'Armário TI - Caixa Cabos',
-    status: 'Disponível',
-    notes: 'Cabos de interligação para racks e switches.'
-  },
-  {
-    id: 'inv-6',
-    name: 'Cabo HDMI Blindado 1.8m',
-    category: 'Cabos',
-    quantity: 7,
-    minQuantity: 3,
-    location: 'Armário TI - Gaveta 1',
-    status: 'Disponível',
-    notes: 'Conexão para monitores e TV de dashboards.'
-  },
-  {
-    id: 'inv-7',
-    name: 'Monitor LED 21.5" Full HD Dell / LG',
-    category: 'Hardware',
-    quantity: 3,
-    minQuantity: 2,
-    location: 'Sala de TI - Bancada',
-    status: 'Disponível',
-    notes: 'Monitores reserva para troca rápida de postos.'
-  },
-  {
-    id: 'inv-8',
-    name: 'Switch 24 Portas Gigabit Reserva (TP-Link/D-Link)',
-    category: 'Redes',
-    quantity: 2,
-    minQuantity: 1,
-    location: 'Rack Servidores - Reserva',
-    status: 'Disponível',
-    notes: 'Switch não gerenciável pronto para backup imediato de espinha.'
-  },
-  {
-    id: 'inv-9',
-    name: 'Fonte de Alimentação 12V 2A Padrão P4',
-    category: 'Hardware',
-    quantity: 5,
-    minQuantity: 3,
-    location: 'Armário TI - Gaveta 3',
-    status: 'Disponível',
-    notes: 'Para roteadores MikroTik, conversores de mídia e modems.'
-  },
-  {
-    id: 'inv-10',
-    name: 'Adaptador DisplayPort para HDMI 4K',
-    category: 'Cabos',
-    quantity: 4,
-    minQuantity: 2,
-    location: 'Armário TI - Gaveta 1',
-    status: 'Disponível',
-    notes: 'Para máquinas que só possuem saída DP na placa-mãe.'
-  }
-];
+import { api } from './api.js';
 
 export class InventoryManager {
   constructor(showToastCallback) {
     this.showToast = showToastCallback;
-    this.items = this.loadItems();
+    this.items = [];
     this.searchTerm = '';
     this.activeCategory = 'Todos';
     this.editingId = null;
 
     this.initDOMElements();
     this.bindEvents();
+    this.loadItems();
   }
 
-  loadItems() {
+  async loadItems() {
     try {
-      const saved = localStorage.getItem(INVENTORY_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (api.isAuthenticated()) {
+        const data = await api.get('/api/inventory');
+        if (Array.isArray(data)) {
+          this.items = data;
+          this.render();
+          return;
+        }
       }
     } catch (e) {
-      console.error('Erro ao ler estoque:', e);
+      console.error('[Inventory] Erro ao carregar estoque da API:', e);
     }
-    return [...defaultInventoryItems];
-  }
-
-  saveItems() {
-    try {
-      localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(this.items));
-    } catch (e) {
-      console.error('Erro ao salvar estoque:', e);
-    }
+    this.items = [];
+    this.render();
   }
 
   initDOMElements() {
@@ -158,7 +53,7 @@ export class InventoryManager {
   }
 
   bindEvents() {
-    // Search
+    // Busca
     if (this.searchInput) {
       this.searchInput.addEventListener('input', (e) => {
         this.searchTerm = e.target.value;
@@ -182,7 +77,7 @@ export class InventoryManager {
       });
     }
 
-    // Modal
+    // Modal de Adição
     if (this.openAddBtn) {
       this.openAddBtn.addEventListener('click', () => this.openModal());
     }
@@ -203,7 +98,7 @@ export class InventoryManager {
   openModal(item = null) {
     this.editingId = item ? item.id : null;
     if (this.modalTitle) {
-      this.modalTitle.textContent = item ? 'Editar Item de Estoque' : 'Cadastrar Item no Estoque';
+      this.modalTitle.textContent = item ? 'Editar Item de Estoque' : 'Cadastrar Item de Estoque';
     }
 
     const form = this.modalForm;
@@ -211,8 +106,8 @@ export class InventoryManager {
       form.elements['inv-name'].value = item ? item.name : '';
       form.elements['inv-category'].value = item ? item.category : 'Periféricos';
       form.elements['inv-quantity'].value = item ? item.quantity : 1;
-      form.elements['inv-min'].value = item ? item.minQuantity : 2;
-      form.elements['inv-location'].value = item ? item.location : 'Armário TI';
+      form.elements['inv-min-quantity'].value = item ? item.minQuantity : 2;
+      form.elements['inv-location'].value = item ? item.location || '' : '';
       form.elements['inv-status'].value = item ? item.status : 'Disponível';
       form.elements['inv-notes'].value = item ? item.notes || '' : '';
     }
@@ -225,16 +120,16 @@ export class InventoryManager {
     this.editingId = null;
   }
 
-  handleSave() {
+  async handleSave() {
     const form = this.modalForm;
     if (!form) return;
 
     const name = form.elements['inv-name'].value.trim();
     const category = form.elements['inv-category'].value.trim();
     const quantity = parseInt(form.elements['inv-quantity'].value, 10) || 0;
-    const minQuantity = parseInt(form.elements['inv-min'].value, 10) || 0;
-    const location = form.elements['inv-location'].value.trim() || 'Armário TI';
-    const status = form.elements['inv-status'].value.trim() || 'Disponível';
+    const minQuantity = parseInt(form.elements['inv-min-quantity'].value, 10) || 0;
+    const location = form.elements['inv-location'].value.trim();
+    const status = form.elements['inv-status'].value.trim();
     const notes = form.elements['inv-notes'].value.trim();
 
     if (!name) {
@@ -242,56 +137,47 @@ export class InventoryManager {
       return;
     }
 
-    if (this.editingId) {
-      this.items = this.items.map((it) => {
-        if (it.id === this.editingId) {
-          return { ...it, name, category, quantity, minQuantity, location, status, notes };
-        }
-        return it;
-      });
-      this.showToast(`Item "${name}" atualizado no estoque!`);
-    } else {
-      const newItem = {
-        id: 'inv-' + Date.now(),
-        name,
-        category,
-        quantity,
-        minQuantity,
-        location,
-        status,
-        notes
-      };
-      this.items.unshift(newItem);
-      this.showToast(`Item "${name}" adicionado ao estoque!`);
-    }
+    const payload = { name, category, quantity, minQuantity, location, status, notes };
 
-    this.saveItems();
-    this.closeModal();
-    this.render();
-  }
-
-  adjustQuantity(id, delta) {
-    this.items = this.items.map((it) => {
-      if (it.id === id) {
-        const nextQty = Math.max(0, it.quantity + delta);
-        return { ...it, quantity: nextQty };
+    try {
+      if (this.editingId) {
+        await api.put(`/api/inventory/${this.editingId}`, payload);
+        this.showToast(`Item "${name}" atualizado no estoque do servidor!`);
+      } else {
+        await api.post('/api/inventory', payload);
+        this.showToast(`Item "${name}" adicionado ao estoque do servidor!`);
       }
-      return it;
-    });
-
-    this.saveItems();
-    this.render();
+      this.closeModal();
+      await this.loadItems();
+    } catch (err) {
+      alert('Erro ao salvar no servidor: ' + err.message);
+    }
   }
 
-  handleDelete(id) {
+  async adjustQuantity(id, delta) {
+    try {
+      const updated = await api.patch(`/api/inventory/${id}/qty`, { delta });
+      if (updated) {
+        this.items = this.items.map((it) => (it.id === id ? updated : it));
+        this.render();
+      }
+    } catch (err) {
+      alert('Erro ao alterar quantidade: ' + err.message);
+    }
+  }
+
+  async handleDelete(id) {
     const item = this.items.find((it) => it.id === id);
     if (!item) return;
 
-    if (window.confirm(`Deseja remover o item "${item.name}" do estoque?`)) {
-      this.items = this.items.filter((it) => it.id !== id);
-      this.saveItems();
-      this.showToast(`Item "${item.name}" removido.`);
-      this.render();
+    if (window.confirm(`Deseja remover o item "${item.name}" do estoque no servidor?`)) {
+      try {
+        await api.delete(`/api/inventory/${id}`);
+        this.showToast(`Item "${item.name}" removido do estoque.`);
+        await this.loadItems();
+      } catch (err) {
+        alert('Erro ao excluir do servidor: ' + err.message);
+      }
     }
   }
 
@@ -328,11 +214,11 @@ export class InventoryManager {
         const count = counts[cat] || 0;
 
         const activeClass = isActive
-          ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20'
+          ? 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-500/20'
           : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
 
         const badgeClass = isActive
-          ? 'bg-blue-700/60 text-white'
+          ? 'bg-emerald-700/60 text-white'
           : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
 
         return `
@@ -342,7 +228,7 @@ export class InventoryManager {
             class="inv-cat-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
           >
             <span>${cat}</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-md font-mono font-semibold ${badgeClass}">${count}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold ${badgeClass}">${count}</span>
           </button>
         `;
       })
@@ -350,154 +236,171 @@ export class InventoryManager {
 
     this.categoriesContainer.querySelectorAll('.inv-cat-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.activeCategory = btn.getAttribute('data-cat');
+        this.activeCategory = btn.getAttribute('data-cat') || 'Todos';
         this.render();
       });
     });
   }
 
-  getItemIcon(cat) {
-    switch (cat) {
-      case 'Periféricos':
-        return 'fa-solid fa-headphones text-blue-500';
-      case 'Cabos':
-        return 'fa-solid fa-ethernet text-amber-500';
-      case 'Hardware':
-        return 'fa-solid fa-microchip text-purple-500';
-      case 'Redes':
-        return 'fa-solid fa-network-wired text-cyan-500';
-      default:
-        return 'fa-solid fa-box text-slate-400';
-    }
-  }
-
   renderCards() {
     if (!this.container) return;
-    const items = this.getFilteredList();
+
+    const list = this.getFilteredList();
+    const isAdmin = api.isAdmin();
 
     const lowStockCount = this.items.filter((it) => it.quantity <= it.minQuantity).length;
-
     if (this.totalCounter) this.totalCounter.textContent = this.items.length;
     if (this.lowStockCounter) this.lowStockCounter.textContent = lowStockCount;
 
-    if (items.length === 0) {
+    if (list.length === 0) {
       this.container.innerHTML = `
-        <div class="col-span-full py-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
-          <i class="fa-solid fa-boxes-stacked text-3xl text-slate-400 mb-2"></i>
-          <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">Nenhum item de estoque encontrado</h4>
-          <p class="text-xs text-slate-400 dark:text-slate-500">Tente buscar por outro termo ou cadastre um novo equipamento.</p>
+        <div class="col-span-full py-16 text-center">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 mb-4">
+            <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">Nenhum item encontrado no estoque</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            ${this.searchTerm ? 'Tente buscar com outro termo ou limpe os filtros.' : 'Cadastre seu primeiro equipamento ou periférico no botão acima.'}
+          </p>
         </div>
       `;
       return;
     }
 
-    this.container.innerHTML = items
-      .map((it) => {
-        const isLow = it.quantity <= it.minQuantity;
-        const isZero = it.quantity === 0;
+    this.container.innerHTML = list
+      .map((item) => {
+        const isLow = item.quantity <= item.minQuantity;
 
-        let statusBadge = '';
-        if (isZero) {
-          statusBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">Esgotado</span>';
-        } else if (isLow) {
-          statusBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Estoque Baixo</span>';
-        } else {
-          statusBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Em Estoque</span>';
+        let icon = 'fa-solid fa-box';
+        let color = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+
+        if (item.category === 'Periféricos') {
+          icon = 'fa-solid fa-headphones';
+          color = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+        } else if (item.category === 'Cabos') {
+          icon = 'fa-solid fa-ethernet';
+          color = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+        } else if (item.category === 'Hardware') {
+          icon = 'fa-solid fa-microchip';
+          color = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+        } else if (item.category === 'Redes') {
+          icon = 'fa-solid fa-network-wired';
+          color = 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
         }
 
-        const iconClass = this.getItemIcon(it.category);
-
         return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 shadow-xs flex flex-col justify-between transition-all" data-id="${it.id}">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border ${isLow ? 'border-amber-500/60 shadow-amber-500/5' : 'border-slate-200/80 dark:border-slate-800'} p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
             
             <div>
-              <div class="flex items-start justify-between gap-2 mb-2">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm shrink-0 shadow-2xs">
-                    <i class="${iconClass}"></i>
+              <!-- Header do Item -->
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center border ${color}">
+                    <i class="${icon} text-sm"></i>
                   </div>
-                  <div class="min-w-0">
-                    <h4 class="font-bold text-sm text-slate-900 dark:text-white truncate" title="${it.name}">
-                      ${it.name}
-                    </h4>
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">${item.name}</h4>
                     <div class="flex items-center gap-1.5 mt-0.5">
-                      <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                        ${it.category}
-                      </span>
-                      <span>&bull;</span>
-                      ${statusBadge}
+                      <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${color}">${item.category}</span>
+                      ${
+                        isLow
+                          ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> Estoque Baixo</span>'
+                          : ''
+                      }
                     </div>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-0.5 shrink-0">
+                <!-- Ações de Editar / Excluir -->
+                <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"
-                    class="inv-edit-btn p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
-                    title="Editar item"
-                    data-id="${it.id}"
+                    data-action="edit"
+                    data-id="${item.id}"
+                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
+                    title="Editar Item"
                   >
-                    <i class="fa-regular fa-pen-to-square"></i>
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
                   </button>
+                  ${isAdmin ? `
                   <button
                     type="button"
-                    class="inv-delete-btn p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg text-xs transition-colors cursor-pointer"
-                    title="Excluir item"
-                    data-id="${it.id}"
+                    data-action="delete"
+                    data-id="${item.id}"
+                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                    title="Excluir Item"
                   >
-                    <i class="fa-regular fa-trash-can"></i>
+                    <i class="fa-solid fa-trash-can text-xs"></i>
                   </button>
+                  ` : ''}
                 </div>
               </div>
 
-              <!-- Quantity Quick Adjust Box -->
-              <div class="my-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
+              <!-- Quantidade & Controles Rápidos -->
+              <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between mb-3">
                 <div>
-                  <span class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Quantidade</span>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Qtd Disponível</span>
                   <div class="flex items-baseline gap-1.5">
-                    <span class="font-black text-xl text-slate-900 dark:text-white font-mono">${it.quantity}</span>
-                    <span class="text-[10px] text-slate-400 font-mono">unidades (Mín: ${it.minQuantity})</span>
+                    <span class="text-2xl font-black font-mono ${isLow ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}">
+                      ${item.quantity}
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-mono">unid. (Mín: ${item.minQuantity})</span>
                   </div>
                 </div>
 
-                <!-- Quick +/- Controls -->
-                <div class="flex items-center gap-1">
+                <!-- Botões + e - para Entrada/Saída Rápida -->
+                <div class="flex items-center gap-1.5">
                   <button
                     type="button"
-                    class="qty-btn-minus w-8 h-8 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer active:scale-95"
+                    data-action="qty-dec"
+                    data-id="${item.id}"
+                    class="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 flex items-center justify-center font-bold text-sm shadow-xs transition-colors"
                     title="Dar baixa (-1)"
-                    data-id="${it.id}"
                   >
-                    <i class="fa-solid fa-minus"></i>
+                    <i class="fa-solid fa-minus text-xs"></i>
                   </button>
                   <button
                     type="button"
-                    class="qty-btn-plus w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center text-xs font-bold transition-colors cursor-pointer active:scale-95 shadow-sm shadow-blue-500/20"
-                    title="Dar entrada (+1)"
-                    data-id="${it.id}"
+                    data-action="qty-inc"
+                    data-id="${item.id}"
+                    class="w-8 h-8 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 flex items-center justify-center font-bold text-sm shadow-xs shadow-emerald-600/20 transition-colors"
+                    title="Adicionar (+1)"
                   >
-                    <i class="fa-solid fa-plus"></i>
+                    <i class="fa-solid fa-plus text-xs"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- Location & Details -->
-              <div class="space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                <div class="flex items-center gap-1.5">
-                  <i class="fa-solid fa-location-dot text-[10px] text-slate-400 shrink-0"></i>
-                  <span class="font-medium text-slate-700 dark:text-slate-300">${it.location}</span>
-                </div>
+              <!-- Localização e Detalhes -->
+              <div class="space-y-1.5 mb-3 text-xs text-slate-600 dark:text-slate-400">
                 ${
-                  it.notes
-                    ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1 italic">${it.notes}</p>`
+                  item.location
+                    ? `
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-location-dot text-slate-400 text-xs w-3.5 text-center"></i>
+                    <span class="truncate font-medium text-slate-700 dark:text-slate-300">${item.location}</span>
+                  </div>
+                `
+                    : ''
+                }
+                ${
+                  item.notes
+                    ? `
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mt-1">
+                    <i class="fa-regular fa-note-sticky mr-1 text-[10px] text-slate-400"></i>${item.notes}
+                  </p>
+                `
                     : ''
                 }
               </div>
             </div>
 
-            <div class="pt-2 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Inventário TI VieiraCred</span>
-              <span>ID: ${it.id}</span>
+            <!-- Rodapé do Cartão -->
+            <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+              <span>Status: <strong class="${item.status === 'Disponível' ? 'text-emerald-500' : 'text-slate-400'}">${item.status}</strong></span>
+              <span class="text-emerald-500 flex items-center gap-1 font-sans font-medium">
+                <i class="fa-solid fa-cloud-arrow-up text-[9px]"></i> Sincronizado
+              </span>
             </div>
 
           </div>
@@ -509,40 +412,36 @@ export class InventoryManager {
   }
 
   bindCardEvents() {
-    // Minus Qty
-    this.container.querySelectorAll('.qty-btn-minus').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-id');
-        this.adjustQuantity(id, -1);
-      });
-    });
+    if (!this.container) return;
 
-    // Plus Qty
-    this.container.querySelectorAll('.qty-btn-plus').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-id');
-        this.adjustQuantity(id, 1);
-      });
-    });
-
-    // Edit
-    this.container.querySelectorAll('.inv-edit-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
+    // Editar e Excluir
+    this.container.querySelectorAll('button[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         const item = this.items.find((it) => it.id === id);
         if (item) this.openModal(item);
       });
     });
 
-    // Delete
-    this.container.querySelectorAll('.inv-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
+    this.container.querySelectorAll('button[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         if (id) this.handleDelete(id);
+      });
+    });
+
+    // Ajuste de Quantidade Rápido (+1 / -1)
+    this.container.querySelectorAll('button[data-action="qty-inc"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (id) this.adjustQuantity(id, 1);
+      });
+    });
+
+    this.container.querySelectorAll('button[data-action="qty-dec"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (id) this.adjustQuantity(id, -1);
       });
     });
   }

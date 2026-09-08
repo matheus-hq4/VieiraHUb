@@ -1,45 +1,46 @@
 /**
- * Módulo de Autenticação Simples do VieiraTech HUB
- * Credenciais fixas de acesso:
- * Usuário: vieiratech
- * Senha:   $Vi3ir@Tech
+ * Módulo de Autenticação Segura do VieiraTech HUB
+ * Comunica com o backend /api/auth/login e gerencia sessões RBAC (Admin / Operador)
  */
 
-const AUTH_STORAGE_KEY = 'vieiratech_auth_session_v1';
-const VALID_USER = 'vieiratech';
-const VALID_PASS = '$Vi3ir@Tech';
+import { api } from './api.js';
 
 export class AuthManager {
   static isAuthenticated() {
-    try {
-      return localStorage.getItem(AUTH_STORAGE_KEY) === 'true' || sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
+    return api.isAuthenticated();
   }
 
-  static login(username, password, remember = true) {
-    const user = (username || '').trim().toLowerCase();
+  static getCurrentUser() {
+    return api.getUser();
+  }
+
+  static isAdmin() {
+    return api.isAdmin();
+  }
+
+  static async login(username, password, remember = true) {
+    const user = (username || '').trim();
     const pass = (password || '').trim();
 
-    if (user === VALID_USER && pass === VALID_PASS) {
-      if (remember) {
-        localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-      } else {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
-      }
-      return true;
+    if (!user || !pass) {
+      throw new Error('Informe o usuário e a senha.');
     }
-    return false;
+
+    const data = await api.post('/api/auth/login', { username: user, password: pass });
+    if (data && data.token && data.user) {
+      api.setAuth(data.token, data.user, remember);
+      return data.user;
+    }
+    throw new Error('Resposta de autenticação inválida.');
   }
 
-  static logout() {
+  static async logout() {
     try {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-    } catch (e) {
-      console.error('Erro ao deslogar:', e);
+      await api.post('/api/auth/logout', {});
+    } catch {
+      // Ignora erro de rede no logout
     }
+    api.clearAuth();
     window.location.reload();
   }
 
@@ -51,18 +52,28 @@ export class AuthManager {
     const errorMsg = document.getElementById('login-error-msg');
     const togglePassBtn = document.getElementById('toggle-pass-visibility');
     const logoutBtn = document.getElementById('logout-btn');
+    const loginSubmitBtn = form ? form.querySelector('button[type="submit"]') : null;
 
-    // Logout button handler
+    // Escuta expiração de sessão automática
+    window.addEventListener('auth:unauthorized', () => {
+      if (overlay) overlay.classList.remove('hidden');
+      if (errorMsg) {
+        errorMsg.textContent = 'Sessão expirada. Faça login novamente.';
+        errorMsg.classList.remove('hidden');
+      }
+    });
+
+    // Botão de Logout
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', (e) => {
+      logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         if (window.confirm('Deseja realmente sair do VieiraTech HUB?')) {
-          AuthManager.logout();
+          await AuthManager.logout();
         }
       });
     }
 
-    // Toggle password visibility
+    // Alternar visibilidade da senha no input de login
     if (togglePassBtn && passInput) {
       togglePassBtn.addEventListener('click', () => {
         const isPass = passInput.type === 'password';
@@ -74,42 +85,86 @@ export class AuthManager {
       });
     }
 
-    // Check if already authenticated
+    // Atualiza cabeçalho com usuário ativo
+    AuthManager.updateUserBadge();
+
+    // Se já autenticado, fecha modal e executa callback
     if (AuthManager.isAuthenticated()) {
       if (overlay) overlay.classList.add('hidden');
-      if (onSuccessCallback) onSuccessCallback();
+      if (onSuccessCallback) onSuccessCallback(AuthManager.getCurrentUser());
       return;
     }
 
-    // Show login screen
+    // Exibir tela de login
     if (overlay) {
       overlay.classList.remove('hidden');
       if (userInput) userInput.focus();
     }
 
-    // Form submit handler
+    // Submissão do formulário de login
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = userInput?.value || '';
         const pass = passInput?.value || '';
         const remember = document.getElementById('login-remember')?.checked ?? true;
 
-        if (AuthManager.login(user, pass, remember)) {
+        if (loginSubmitBtn) {
+          loginSubmitBtn.disabled = true;
+          loginSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>Validando...</span>';
+        }
+
+        try {
+          const loggedUser = await AuthManager.login(user, pass, remember);
           if (errorMsg) errorMsg.classList.add('hidden');
           if (overlay) overlay.classList.add('hidden');
-          if (onSuccessCallback) onSuccessCallback();
-        } else {
-          if (errorMsg) {
-            errorMsg.classList.remove('hidden');
-            errorMsg.textContent = 'Usuário ou senha inválidos. Tente novamente.';
+
+          AuthManager.updateUserBadge();
+
+          if (onSuccessCallback) {
+            onSuccessCallback(loggedUser);
           }
-          if (passInput) {
-            passInput.value = '';
-            passInput.focus();
+        } catch (err) {
+          if (errorMsg) {
+            errorMsg.textContent = err.message || 'Credenciais inválidas.';
+            errorMsg.classList.remove('hidden');
+          }
+          if (passInput) passInput.value = '';
+        } finally {
+          if (loginSubmitBtn) {
+            loginSubmitBtn.disabled = false;
+            loginSubmitBtn.innerHTML = '<span>Entrar no HUB</span><i class="fa-solid fa-arrow-right text-xs"></i>';
           }
         }
       });
+    }
+  }
+
+  static updateUserBadge() {
+    const user = AuthManager.getCurrentUser();
+    const userDisplay = document.getElementById('user-profile-display');
+    const userNameSpan = document.getElementById('user-profile-name');
+    const userRoleSpan = document.getElementById('user-profile-role');
+    const adminMenuBtn = document.getElementById('admin-users-btn');
+
+    if (user && userDisplay) {
+      userDisplay.classList.remove('hidden');
+      if (userNameSpan) userNameSpan.textContent = user.name || user.username;
+      if (userRoleSpan) {
+        userRoleSpan.textContent = user.role === 'admin' ? 'Administrador' : 'Operador';
+        userRoleSpan.className = user.role === 'admin'
+          ? 'text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold'
+          : 'text-[10px] px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400 font-medium';
+      }
+    }
+
+    // Exibe botão de gerenciamento de usuários se for admin
+    if (adminMenuBtn) {
+      if (user && user.role === 'admin') {
+        adminMenuBtn.classList.remove('hidden');
+      } else {
+        adminMenuBtn.classList.add('hidden');
+      }
     }
   }
 }
