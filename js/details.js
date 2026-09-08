@@ -298,9 +298,15 @@ class ToolDetailsApp {
   }
 }
 
-// Initialize on DOM ready with authentication gate
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize with robust DOM ready check
+function bootDetails() {
   AuthManager.initAuthGate(() => {
     window.toolDetailsApp = new ToolDetailsApp();
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootDetails);
+} else {
+  bootDetails();
+}

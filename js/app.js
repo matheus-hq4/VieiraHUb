@@ -819,7 +819,7 @@ class App {
     this.editingToolId = null;
   }
 
-  handleSaveTool() {
+  async handleSaveTool() {
     const form = this.toolModalForm;
     if (!form) return;
 
@@ -1482,9 +1482,15 @@ class App {
   }
 }
 
-// Initialize on DOM ready with authentication gate
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize with robust DOM ready check
+function boot() {
   AuthManager.initAuthGate(() => {
     window.vieiratechApp = new App();
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}

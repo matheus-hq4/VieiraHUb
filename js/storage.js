@@ -49,6 +49,14 @@ export async function deleteTool(id) {
 }
 
 /**
+ * Restaura ferramentas para os valores padrão no servidor
+ */
+export async function resetToDefaults() {
+  const { defaultToolsList } = await import('./data.js');
+  return await saveTools(defaultToolsList);
+}
+
+/**
  * Carrega a preferência de tema (dark/light)
  * @returns {boolean} true se for tema escuro
  */
