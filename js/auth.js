@@ -158,18 +158,21 @@ export class AuthManager {
   static updateUserBadge() {
     const user = AuthManager.getCurrentUser();
     const userDisplay = document.getElementById('user-profile-display');
+    const userInitialSpan = document.getElementById('user-profile-initial');
     const userNameSpan = document.getElementById('user-profile-name');
     const userRoleSpan = document.getElementById('user-profile-role');
     const adminMenuBtn = document.getElementById('admin-users-btn');
 
     if (user && userDisplay) {
       userDisplay.classList.remove('hidden');
-      if (userNameSpan) userNameSpan.textContent = user.name || user.username;
+      const displayName = user.name || user.username || 'Admin';
+      if (userNameSpan) userNameSpan.textContent = displayName;
+      if (userInitialSpan) userInitialSpan.textContent = displayName.charAt(0).toUpperCase();
       if (userRoleSpan) {
         userRoleSpan.textContent = user.role === 'admin' ? 'Administrador' : 'Operador';
         userRoleSpan.className = user.role === 'admin'
-          ? 'text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold'
-          : 'text-[10px] px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400 font-medium';
+          ? 'text-[9px] font-semibold text-blue-600 dark:text-blue-400 leading-none mt-0.5'
+          : 'text-[9px] font-medium text-slate-500 dark:text-slate-400 leading-none mt-0.5';
       }
     }
 
