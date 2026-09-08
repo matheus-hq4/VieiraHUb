@@ -316,8 +316,8 @@ app.get('/api/ad-logins', requireAuth, (req, res) => {
   return res.json({ rawText: adData.rawText || '' });
 });
 
-// Atualizar texto de mapeamento do AD (apenas Administrador)
-app.post('/api/ad-logins', requireAdmin, (req, res) => {
+// Atualizar texto de mapeamento do AD (equipe autenticada de TI)
+app.post('/api/ad-logins', requireAuth, (req, res) => {
   const { rawText } = req.body || {};
   if (typeof rawText !== 'string') {
     return res.status(400).json({ error: 'O formato do mapeamento deve ser texto.' });

@@ -1,12 +1,13 @@
 import { defaultLoginsText } from './defaultLogins.js';
 import { loadTheme, saveTheme } from './storage.js';
 import { AuthManager } from './auth.js';
+import { api } from './api.js';
 
 const LOGINS_STORAGE_KEY = 'vieiratech_mapeamento_logins_v1';
 
 class LoginsApp {
   constructor() {
-    this.rawText = this.loadLoginsText();
+    this.rawText = '';
     this.isDarkMode = loadTheme();
     this.activeView = 'explorer'; // 'explorer' | 'editor'
     this.searchTerm = '';
@@ -16,27 +17,45 @@ class LoginsApp {
     this.initTheme();
     this.initDOMElements();
     this.bindEvents();
+    this.loadData();
+  }
+
+  async loadData() {
+    this.rawText = await this.loadLoginsText();
     this.render();
   }
 
-  loadLoginsText() {
+  async loadLoginsText() {
     try {
-      const saved = localStorage.getItem(LOGINS_STORAGE_KEY);
-      if (saved && saved.trim().length > 0) {
-        return saved;
+      const res = await api.get('/api/ad-logins');
+      if (res && typeof res.rawText === 'string' && res.rawText.trim().length > 0) {
+        localStorage.setItem(LOGINS_STORAGE_KEY, res.rawText);
+        return res.rawText;
       }
     } catch (e) {
-      console.error('Erro ao ler mapeamento do storage:', e);
+      console.warn('[LoginsApp] Erro ao carregar do servidor, usando cache local:', e);
+    }
+    const saved = localStorage.getItem(LOGINS_STORAGE_KEY);
+    if (saved && saved.trim().length > 0) {
+      return saved;
     }
     return defaultLoginsText;
   }
 
-  saveLoginsText(text) {
+  async saveLoginsText(text) {
     this.rawText = text;
     try {
       localStorage.setItem(LOGINS_STORAGE_KEY, text);
     } catch (e) {
-      console.error('Erro ao salvar mapeamento:', e);
+      console.error('[LoginsApp] Erro ao salvar localmente:', e);
+    }
+
+    try {
+      await api.post('/api/ad-logins', { rawText: text });
+      this.indicateSaved('Salvo no servidor');
+    } catch (err) {
+      console.error('[LoginsApp] Erro ao sincronizar com servidor:', err);
+      this.indicateSaved('Salvo no navegador (offline)');
     }
   }
 
@@ -202,11 +221,11 @@ class LoginsApp {
     }
 
     if (this.resetDefaultBtn) {
-      this.resetDefaultBtn.addEventListener('click', () => {
-        if (window.confirm('Deseja realmente restaurar o mapeamento para o modelo padrão da VieiraCred?')) {
-          this.saveLoginsText(defaultLoginsText);
+      this.resetDefaultBtn.addEventListener('click', async () => {
+        if (window.confirm('Deseja realmente restaurar o mapeamento para o modelo padrão da VieiraCred no servidor?')) {
+          await this.saveLoginsText(defaultLoginsText);
           if (this.editorTextarea) this.editorTextarea.value = defaultLoginsText;
-          this.showToast('Mapeamento restaurado para o padrão.');
+          this.showToast('Mapeamento padrão restaurado no servidor!');
           this.render();
         }
       });
@@ -302,15 +321,15 @@ class LoginsApp {
     }
 
     const updatedText = lines.join('\n');
-    this.saveLoginsText(updatedText);
+    await this.saveLoginsText(updatedText);
     if (this.editorTextarea) this.editorTextarea.value = updatedText;
 
-    this.showToast(`Usuário "${userName}" adicionado com sucesso!`);
+    this.showToast(`Usuário "${userName}" adicionado e salvo no servidor!`);
     this.closeAddModal();
     this.render();
   }
 
-  handleDeleteUser(userIdentifier) {
+  async handleDeleteUser(userIdentifier) {
     if (!window.confirm(`Tem certeza que deseja remover o usuário "${userIdentifier}"?`)) {
       return;
     }
@@ -325,10 +344,10 @@ class LoginsApp {
     });
 
     const updatedText = filteredLines.join('\n');
-    this.saveLoginsText(updatedText);
+    await this.saveLoginsText(updatedText);
     if (this.editorTextarea) this.editorTextarea.value = updatedText;
 
-    this.showToast(`Usuário "${userIdentifier}" removido.`);
+    this.showToast(`Usuário "${userIdentifier}" removido do servidor.`);
     this.render();
   }
 
@@ -703,9 +722,9 @@ class LoginsApp {
     }
   }
 
-  indicateSaved() {
+  indicateSaved(label = 'Salvo no servidor central') {
     if (this.saveStatus) {
-      this.saveStatus.innerHTML = '<i class="fa-solid fa-check text-emerald-500 text-xs"></i><span>Salvo no navegador</span>';
+      this.saveStatus.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-emerald-500 text-xs"></i><span>${label}</span>`;
       this.saveStatus.className = 'text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/60';
     }
   }
@@ -728,13 +747,13 @@ class LoginsApp {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = event.target.result;
         if (typeof content === 'string') {
-          this.saveLoginsText(content);
+          await this.saveLoginsText(content);
           if (this.editorTextarea) this.editorTextarea.value = content;
-          this.showToast('Arquivo de mapeamento importado com sucesso!');
+          this.showToast('Mapeamento importado e sincronizado com o servidor!');
           this.render();
         }
       } catch (err) {

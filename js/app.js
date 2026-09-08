@@ -1161,13 +1161,19 @@ class App {
       }
     });
 
-    // Render active pane
+    // Render active pane com sincronização em tempo real do servidor
     if (tabId === 'vault' && this.vault) {
-      this.vault.render();
+      this.vault.loadPasswords();
     } else if (tabId === 'inventory' && this.inventory) {
-      this.inventory.render();
+      this.inventory.loadItems();
     } else if (tabId === 'logins') {
       this.renderAdPane();
+      this.loadAdLogins().then((fresh) => {
+        if (fresh && fresh !== this.adRawText) {
+          this.adRawText = fresh;
+          this.renderAdPane();
+        }
+      });
     } else if (tabId === 'apps') {
       this.render();
     }
@@ -1316,7 +1322,10 @@ class App {
     this.paneAdContainer.innerHTML = filteredDepts
       .map((dept) => {
         let subSectionsHtml = '';
+        let deptTotalUsers = dept.directUsers.length;
+
         dept.subSections.forEach((users, subTitle) => {
+          deptTotalUsers += users.length;
           const isEspinha = subTitle.startsWith('Espinha');
           const badgeClass = isEspinha
             ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
@@ -1326,15 +1335,15 @@ class App {
           const usersRows = users.map((u) => this.renderAdUserRow(u)).join('');
 
           subSectionsHtml += `
-            <div class="mb-4 last:mb-0">
-              <div class="flex items-center gap-2 mb-2 pb-1 border-b border-slate-100 dark:border-slate-800/80">
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${badgeClass} flex items-center gap-1.5">
+            <div class="mb-4 last:mb-0 bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl p-3 border border-slate-200/50 dark:border-slate-800/60">
+              <div class="flex items-center justify-between gap-2 mb-2.5 pb-1.5 border-b border-slate-200/60 dark:border-slate-800">
+                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold ${badgeClass} flex items-center gap-1.5">
                   <i class="${icon}"></i>
                   <span>${subTitle}</span>
                 </span>
-                <span class="text-[10px] text-slate-400 font-mono">(${users.length} logins)</span>
+                <span class="text-[10px] text-slate-400 font-mono font-bold">(${users.length} ${users.length === 1 ? 'login' : 'logins'})</span>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 ${usersRows}
               </div>
             </div>
@@ -1344,22 +1353,27 @@ class App {
         const directUsersHtml =
           dept.directUsers.length > 0
             ? `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-3">
               ${dept.directUsers.map((u) => this.renderAdUserRow(u)).join('')}
             </div>
           `
             : '';
 
         return `
-          <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-4">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-5">
             <div class="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">
-                  <i class="fa-solid fa-building text-xs"></i>
+                <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold shadow-2xs shrink-0">
+                  <i class="fa-solid fa-building-user text-sm"></i>
                 </div>
-                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
-                  ${dept.name}
-                </h3>
+                <div>
+                  <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight">
+                    ${dept.name}
+                  </h3>
+                  <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                    ${deptTotalUsers} ${deptTotalUsers === 1 ? 'conta ativa' : 'contas ativas'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -1379,39 +1393,53 @@ class App {
     const isInactive = u.status === 'inactive';
 
     return `
-      <div class="bg-slate-50 dark:bg-slate-950/70 border border-slate-200/70 dark:border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between gap-2.5 text-xs font-mono">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5 mb-1">
-            <span class="w-2 h-2 rounded-full ${isInactive ? 'bg-red-500' : 'bg-emerald-500'} shrink-0"></span>
-            <span class="font-bold text-slate-800 dark:text-slate-100 truncate ${isInactive ? 'line-through text-slate-400' : ''}" title="${u.user}">
+      <div class="bg-white dark:bg-slate-950/80 rounded-2xl p-3 border border-slate-200/80 dark:border-slate-800/90 shadow-2xs hover:border-blue-500/50 flex flex-col justify-between gap-2 transition-all">
+        <!-- Top: User info & Copy User -->
+        <div class="flex items-start justify-between gap-2 min-w-0">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="w-2.5 h-2.5 rounded-full ${isInactive ? 'bg-red-500' : 'bg-emerald-500'} shrink-0 shadow-2xs" title="${isInactive ? 'Inativo' : 'Ativo'}"></span>
+            <span class="font-bold text-xs text-slate-900 dark:text-slate-100 truncate select-all ${isInactive ? 'line-through text-slate-400' : ''}" title="${u.user}">
               ${u.user}
             </span>
           </div>
-          <div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-            <i class="fa-solid fa-lock text-[10px] text-slate-400 shrink-0"></i>
-            <span class="truncate tracking-wider font-semibold select-all" title="${isRevealed ? u.pass : 'Clique no olho para revelar'}">
-              ${displayPass}
-            </span>
-          </div>
-        </div>
 
-        <div class="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            class="ad-eye-btn p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-            title="${isRevealed ? 'Ocultar senha' : 'Ver senha'}"
-            data-id="${u.id}"
-          >
-            <i class="${isRevealed ? 'fa-regular fa-eye-slash text-blue-500' : 'fa-regular fa-eye'} text-xs"></i>
-          </button>
-          <button
-            type="button"
-            class="ad-copy-btn p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-            title="Copiar senha"
-            data-copy="${u.pass}"
+            class="ad-copy-user-btn text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+            title="Copiar usuário"
+            data-user="${u.user}"
           >
             <i class="fa-regular fa-copy text-xs"></i>
           </button>
+        </div>
+
+        <!-- Bottom: Masked Password with Eye Toggle & Copy -->
+        <div class="flex items-center justify-between gap-2 min-w-0 bg-slate-50 dark:bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800 font-mono text-xs">
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <i class="fa-solid fa-lock text-[10px] text-slate-400 shrink-0"></i>
+            <span class="font-semibold text-slate-800 dark:text-slate-200 truncate select-all tracking-wider" title="${isRevealed ? u.pass : 'Clique no olho para revelar'}">
+              ${displayPass || '<em class="text-slate-400 text-[10px] font-sans">Sem senha</em>'}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              class="ad-eye-btn p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="${isRevealed ? 'Ocultar senha' : 'Ver senha'}"
+              data-id="${u.id}"
+            >
+              <i class="${isRevealed ? 'fa-regular fa-eye-slash text-xs text-blue-500' : 'fa-regular fa-eye text-xs'}"></i>
+            </button>
+            <button
+              type="button"
+              class="ad-copy-btn p-1 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Copiar senha"
+              data-copy="${u.pass}"
+            >
+              <i class="fa-regular fa-copy text-xs"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -1436,7 +1464,18 @@ class App {
       });
     });
 
-    // Copy
+    // Copy user
+    this.paneAdContainer.querySelectorAll('.ad-copy-user-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const copyUser = btn.getAttribute('data-user');
+        if (copyUser) {
+          this.copyToClipboard(copyUser, 'Usuário copiado com sucesso!');
+        }
+      });
+    });
+
+    // Copy password
     this.paneAdContainer.querySelectorAll('.ad-copy-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
