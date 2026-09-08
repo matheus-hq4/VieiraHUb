@@ -7,7 +7,7 @@ const LOGINS_STORAGE_KEY = 'vieiratech_mapeamento_logins_v1';
 
 class LoginsApp {
   constructor() {
-    this.rawText = '';
+    this.rawText = localStorage.getItem(LOGINS_STORAGE_KEY) || '';
     this.isDarkMode = loadTheme();
     this.activeView = 'explorer'; // 'explorer' | 'editor'
     this.searchTerm = '';
@@ -17,12 +17,41 @@ class LoginsApp {
     this.initTheme();
     this.initDOMElements();
     this.bindEvents();
+
+    if (this.rawText) {
+      this.render();
+    } else if (this.departmentsContainer) {
+      this.departmentsContainer.innerHTML = `
+        <div class="py-16 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-3"></i>
+          <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">Carregando Mapeamento Organizacional...</h4>
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Sincronizando com o servidor do VieiraTech HUB.</p>
+        </div>
+      `;
+    }
+
     this.loadData();
   }
 
   async loadData() {
-    this.rawText = await this.loadLoginsText();
-    this.render();
+    try {
+      const freshText = await this.loadLoginsText();
+      if (freshText) {
+        this.rawText = freshText;
+        this.render();
+      }
+    } catch (e) {
+      console.error('[LoginsApp] Erro ao sincronizar logins:', e);
+      if (!this.rawText && this.departmentsContainer) {
+        this.departmentsContainer.innerHTML = `
+          <div class="py-16 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
+            <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-500 mb-3"></i>
+            <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">Não foi possível carregar os logins</h4>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Verifique sua conexão ou tente recarregar a página.</p>
+          </div>
+        `;
+      }
+    }
   }
 
   async loadLoginsText() {
@@ -795,9 +824,15 @@ class LoginsApp {
   }
 }
 
-// Initialize on DOM ready with authentication gate
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize with robust DOM ready check for ES Modules
+function bootLogins() {
   AuthManager.initAuthGate(() => {
     window.loginsApp = new LoginsApp();
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootLogins);
+} else {
+  bootLogins();
+}
