@@ -11,7 +11,7 @@ class App {
     this.tools = [];
     this.isDarkMode = loadTheme();
     this.searchTerm = '';
-    this.activeCategory = 'Todos';
+    this.activeCategory = 'Mais Acessados';
     this.onlyPinned = false;
     this.viewMode = 'grid'; // 'grid' | 'compact'
     this.editingToolId = null;
@@ -37,6 +37,13 @@ class App {
     try {
       this.tools = await loadTools();
       this.adRawText = await this.loadAdLogins();
+      // Se houver ferramentas fixadas/mais acessadas, inicia nela; caso contrário inicia em Todos
+      const pinnedCount = this.tools.filter((t) => t.pinned).length;
+      if (pinnedCount > 0) {
+        this.activeCategory = 'Mais Acessados';
+      } else {
+        this.activeCategory = 'Todos';
+      }
       this.render();
       this.renderAdPane();
     } catch (e) {
@@ -325,12 +332,14 @@ class App {
 
     return this.tools
       .filter((tool) => {
-        // Category filter
-        if (this.activeCategory !== 'Todos' && tool.category !== this.activeCategory) {
-          return false;
+        // Category filter: Mais Acessados, Todos, or specific category
+        if (this.activeCategory === 'Mais Acessados') {
+          if (!tool.pinned) return false;
+        } else if (this.activeCategory !== 'Todos') {
+          if (tool.category !== this.activeCategory) return false;
         }
 
-        // Pinned filter
+        // Explicit Pinned filter toggle if active
         if (this.onlyPinned && !tool.pinned) {
           return false;
         }
@@ -358,8 +367,13 @@ class App {
   }
 
   // Get dynamic categories list with counts
+  // Structure: ['Mais Acessados', ...sortedCategories, 'Todos']
   getCategoriesData() {
-    const counts = { Todos: this.tools.length };
+    const pinnedCount = this.tools.filter((t) => t.pinned).length;
+    const counts = {
+      'Mais Acessados': pinnedCount,
+      Todos: this.tools.length
+    };
     const set = new Set(['Infraestrutura', 'Servidores', 'Automação', 'Suporte']);
 
     this.tools.forEach((t) => {
@@ -369,8 +383,10 @@ class App {
       }
     });
 
+    const sortedCategories = Array.from(set).sort((a, b) => a.localeCompare(b));
+
     return {
-      list: ['Todos', ...Array.from(set)],
+      list: ['Mais Acessados', ...sortedCategories, 'Todos'],
       counts
     };
   }
@@ -383,13 +399,31 @@ class App {
       .map((cat) => {
         const isActive = this.activeCategory === cat;
         const count = counts[cat] || 0;
-        const activeClass = isActive
-          ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20'
-          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
+        const isMaisAcessados = cat === 'Mais Acessados';
+        const isTodos = cat === 'Todos';
 
-        const badgeClass = isActive
-          ? 'bg-blue-700/60 text-white'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+        let labelHtml = `<span>${cat}</span>`;
+        if (isMaisAcessados) {
+          labelHtml = `<i class="fa-solid fa-star ${isActive ? 'text-amber-300' : 'text-amber-400'} text-xs"></i><span>${cat}</span>`;
+        } else if (isTodos) {
+          labelHtml = `<i class="fa-solid fa-list-check text-xs opacity-75"></i><span>${cat}</span>`;
+        }
+
+        let activeClass = '';
+        let badgeClass = '';
+
+        if (isActive) {
+          if (isMaisAcessados) {
+            activeClass = 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-sm shadow-amber-500/25 ring-1 ring-amber-400/40';
+            badgeClass = 'bg-amber-700/60 text-white';
+          } else {
+            activeClass = 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20';
+            badgeClass = 'bg-blue-700/60 text-white';
+          }
+        } else {
+          activeClass = 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
+          badgeClass = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+        }
 
         return `
           <button
@@ -397,7 +431,7 @@ class App {
             data-category="${cat}"
             class="category-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
           >
-            <span>${cat}</span>
+            ${labelHtml}
             <span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono ${badgeClass}">${count}</span>
           </button>
         `;
@@ -420,7 +454,26 @@ class App {
     if (filtered.length === 0) {
       this.toolsContainer.innerHTML = '';
       this.toolsContainer.className = 'hidden';
-      if (this.emptyState) this.emptyState.classList.remove('hidden');
+      if (this.emptyState) {
+        this.emptyState.classList.remove('hidden');
+        const isMaisAcessados = this.activeCategory === 'Mais Acessados';
+        const titleEl = this.emptyState.querySelector('h3');
+        const descEl = this.emptyState.querySelector('p');
+        const iconEl = this.emptyState.querySelector('.rounded-2xl i');
+        const btnEl = this.emptyStateClearBtn;
+
+        if (isMaisAcessados && !this.searchTerm) {
+          if (iconEl) iconEl.className = 'fa-solid fa-star text-amber-400';
+          if (titleEl) titleEl.textContent = 'Nenhum app nos Mais Acessados';
+          if (descEl) descEl.textContent = 'Clique na estrela (⭐) em qualquer ferramenta para colocá-la aqui no seu Acesso Rápido de prioridade!';
+          if (btnEl) btnEl.textContent = 'Ver Todos os Apps';
+        } else {
+          if (iconEl) iconEl.className = 'fa-solid fa-magnifying-glass text-blue-500';
+          if (titleEl) titleEl.textContent = 'Nenhuma ferramenta encontrada';
+          if (descEl) descEl.textContent = 'Não encontramos nenhum item correspondente ao filtro de busca atual.';
+          if (btnEl) btnEl.textContent = 'Limpar Filtros';
+        }
+      }
       return;
     }
 
@@ -475,18 +528,18 @@ class App {
               </div>
             </div>
 
-            <!-- Pin Button -->
+            <!-- Star / Mais Acessados Button -->
             <button
               type="button"
-              class="pin-btn w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+              class="pin-btn w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                 isPinned
-                  ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20'
-                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'text-amber-500 bg-amber-500/15 hover:bg-amber-500/25 shadow-2xs'
+                  : 'text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }"
-              title="${isPinned ? 'Desafixar dos favoritos' : 'Fixar no topo'}"
+              title="${isPinned ? 'Remover dos Mais Acessados' : 'Adicionar aos Mais Acessados (Acesso Rápido)'}"
               data-id="${tool.id}"
             >
-              <i class="fa-solid fa-thumbtack text-xs ${isPinned ? 'rotate-[-35deg]' : ''}"></i>
+              <i class="${isPinned ? 'fa-solid fa-star text-amber-400 text-xs' : 'fa-regular fa-star text-xs'}"></i>
             </button>
           </div>
 
@@ -593,11 +646,11 @@ class App {
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <button
             type="button"
-            class="pin-btn text-xs ${isPinned ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-slate-500'} cursor-pointer shrink-0"
-            title="${isPinned ? 'Desafixar' : 'Fixar'}"
+            class="pin-btn text-xs ${isPinned ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'} cursor-pointer shrink-0 transition-colors p-1"
+            title="${isPinned ? 'Remover dos Mais Acessados' : 'Adicionar aos Mais Acessados (Acesso Rápido)'}"
             data-id="${tool.id}"
           >
-            <i class="fa-solid fa-thumbtack ${isPinned ? 'rotate-[-35deg]' : ''}"></i>
+            <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
           </button>
 
           <a
@@ -721,15 +774,29 @@ class App {
   }
 
   async handleTogglePin(id) {
+    const tool = this.tools.find((t) => t.id === id);
+    if (!tool) return;
+    const nextState = !tool.pinned;
+
     this.tools = this.tools.map((t) => {
       if (t.id === id) {
-        const nextState = !t.pinned;
-        this.showToast(nextState ? `"${t.name}" fixado no topo!` : `"${t.name}" desafixado.`);
         return { ...t, pinned: nextState };
       }
       return t;
     });
-    await saveTools(this.tools);
+
+    this.showToast(
+      nextState
+        ? `⭐ "${tool.name}" adicionado aos Mais Acessados!`
+        : `"${tool.name}" removido dos Mais Acessados.`
+    );
+
+    try {
+      await saveTools(this.tools);
+    } catch (e) {
+      console.error('[App] Erro ao salvar status nos Mais Acessados:', e);
+      this.showToast('Aviso: Erro ao sincronizar com servidor.');
+    }
     this.render();
   }
 
