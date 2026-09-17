@@ -99,7 +99,10 @@ class App {
     this.pinnedCounter = document.getElementById('pinned-tools-count');
     this.heroTotalCounter = document.getElementById('hero-total-count');
 
-    // Hero KPI Cards
+    // Hero Top Most Accessed Tools
+    this.heroTopToolsContainer = document.getElementById('hero-top-tools-container');
+
+    // Hero KPI Cards (legacy / optional)
     this.heroCardTotal = document.getElementById('hero-card-total');
     this.heroCardPinned = document.getElementById('hero-card-pinned');
     this.heroCardMostUsed = document.getElementById('hero-card-most-used');
@@ -446,6 +449,91 @@ class App {
       list: ['Favoritos', 'Mais Acessados', ...sortedCategories, 'Todos'],
       counts
     };
+  }
+
+  // Render top 4 most accessed tools into Hero Banner grid
+  renderHeroTopTools() {
+    if (!this.heroTopToolsContainer) return;
+    if (!this.tools || this.tools.length === 0) {
+      this.heroTopToolsContainer.innerHTML = `
+        <div class="col-span-2 md:col-span-4 text-center py-6 text-xs text-slate-400">
+          Nenhuma ferramenta cadastrada no momento.
+        </div>
+      `;
+      return;
+    }
+
+    // Ordena por frequencia de acessos (accessCount desc), depois pinned, depois nome
+    const sorted = [...this.tools].sort((a, b) => {
+      const countA = a.accessCount || 0;
+      const countB = b.accessCount || 0;
+      if (countB !== countA) return countB - countA;
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+    const topTools = sorted.slice(0, 4);
+
+    this.heroTopToolsContainer.innerHTML = topTools
+      .map((tool, index) => {
+        const launchUrl = this.formatLaunchUrl(tool.url_or_ip);
+        const count = tool.accessCount || 0;
+
+        return `
+          <div
+            class="hero-tool-card group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            data-id="${tool.id}"
+            data-url="${launchUrl}"
+            title="Acessar ${tool.name} (${tool.url_or_ip})"
+          >
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="w-8 h-8 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 flex items-center justify-center text-sm group-hover:scale-105 transition-transform shrink-0">
+                  <i class="${tool.icon || 'fa-solid fa-server'}"></i>
+                </div>
+                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-slate-800 text-orange-300 border border-slate-700/80">
+                  #${index + 1}
+                </span>
+              </div>
+
+              <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-orange-300 transition-colors truncate">
+                ${tool.name}
+              </h4>
+
+              <div class="font-mono text-[11px] text-slate-400 truncate mt-0.5" title="${tool.url_or_ip}">
+                ${tool.url_or_ip}
+              </div>
+            </div>
+
+            <div class="pt-2.5 mt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+              <span class="text-orange-300/90 text-[10px] font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-fire text-[10px] text-orange-400"></i>
+                <span>${count} acessos</span>
+              </span>
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-orange-600/80 group-hover:bg-orange-500 px-2 py-0.5 rounded-md transition-colors shadow-xs">
+                <span>Acessar</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+              </span>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    // Eventos de clique nos cards do topo do Hero
+    this.heroTopToolsContainer.querySelectorAll('.hero-tool-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const id = card.getAttribute('data-id');
+        const url = card.getAttribute('data-url');
+        if (id) {
+          this.recordToolAccess(id);
+        }
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      });
+    });
   }
 
   renderCategories() {
@@ -1663,6 +1751,7 @@ class App {
     tool.accessCount = (tool.accessCount || 0) + 1;
     tool.lastAccessedAt = new Date().toISOString();
     this.renderCounters();
+    this.renderHeroTopTools();
 
     try {
       await api.post(`/api/tools/${encodeURIComponent(id)}/access`, {});
@@ -1672,6 +1761,7 @@ class App {
   }
 
   render() {
+    this.renderHeroTopTools();
     this.renderCounters();
     this.renderCategories();
     this.renderTools();

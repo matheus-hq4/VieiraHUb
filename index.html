@@ -284,90 +284,18 @@
             </div>
           </div>
 
-          <!-- Bottom Row: 4 Full-Width Operational KPI / Quick-Action Cards -->
-          <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-            <!-- Stat 1: Total Services -->
-            <div
-              id="hero-card-total"
-              class="group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs"
-              title="Clique para ver Todos os Serviços"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-slate-400 group-hover:text-blue-300 transition-colors">Total Mapeado</span>
-                <div class="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center text-xs">
-                  <i class="fa-solid fa-server"></i>
-                </div>
+          <!-- Top Most Accessed Tools (4 Cards Grid Layout) -->
+          <div class="relative z-10 pt-3">
+            <div class="flex items-center justify-between mb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-orange-400">🔥 Apps Mais Acessados</span>
+                <span class="text-[11px] text-slate-400 hidden sm:inline">• Acesso rápido aos serviços de maior frequência</span>
               </div>
-              <div class="flex items-baseline gap-1.5">
-                <span id="hero-stat-total" class="text-xl sm:text-2xl font-black text-white">0</span>
-                <span class="text-[11px] font-medium text-slate-400">serviços</span>
-              </div>
-              <p class="text-[10px] text-emerald-400 flex items-center gap-1 mt-1 font-medium">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>100% Operacionais</span>
-              </p>
+              <span class="text-[11px] text-slate-400 font-mono">Top 4 Frequentes</span>
             </div>
-
-            <!-- Stat 2: Favoritos -->
-            <div
-              id="hero-card-pinned"
-              class="group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs"
-              title="Clique para filtrar Favoritos"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-slate-400 group-hover:text-amber-300 transition-colors">Favoritos</span>
-                <div class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center text-xs">
-                  <i class="fa-solid fa-star"></i>
-                </div>
-              </div>
-              <div class="flex items-baseline gap-1.5">
-                <span id="hero-stat-pinned" class="text-xl sm:text-2xl font-black text-amber-400">0</span>
-                <span class="text-[11px] font-medium text-slate-400">favoritos</span>
-              </div>
-              <p class="text-[10px] text-amber-300/80 flex items-center gap-1 mt-1 font-medium">
-                <span>⭐ Marcados pela Equipe</span>
-              </p>
-            </div>
-
-            <!-- Stat 3: Mais Acessados -->
-            <div
-              id="hero-card-most-used"
-              class="group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs"
-              title="Clique para ver os apps Mais Acessados"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-slate-400 group-hover:text-orange-300 transition-colors">Mais Acessados</span>
-                <div class="w-7 h-7 rounded-lg bg-orange-500/15 text-orange-400 flex items-center justify-center text-xs">
-                  <i class="fa-solid fa-fire"></i>
-                </div>
-              </div>
-              <div class="flex items-baseline gap-1.5">
-                <span id="hero-stat-accesses" class="text-xl sm:text-2xl font-black text-orange-400">0</span>
-                <span class="text-[11px] font-medium text-slate-400">acessos</span>
-              </div>
-              <p class="text-[10px] text-orange-300/80 flex items-center gap-1 mt-1 font-medium">
-                <span>🔥 Ranking por Frequência</span>
-              </p>
-            </div>
-
-            <!-- Stat 4: Busca & Atalhos Rápidos -->
-            <div
-              id="hero-card-search"
-              class="group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs"
-              title="Clique para pesquisar"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-slate-400 group-hover:text-cyan-300 transition-colors">Busca Instantânea</span>
-                <div class="w-7 h-7 rounded-lg bg-cyan-500/15 text-cyan-400 flex items-center justify-center text-xs">
-                  <i class="fa-solid fa-bolt"></i>
-                </div>
-              </div>
-              <div class="flex items-baseline gap-1.5">
-                <span class="text-sm sm:text-base font-bold font-mono text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-500/30">Ctrl + K</span>
-              </div>
-              <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-1 font-medium">
-                <span>Filtro por IP, porta e nome</span>
-              </p>
+            <div id="hero-top-tools-container" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <!-- Renderizado dinamicamente via App.renderHeroTopTools() -->
             </div>
           </div>
 
