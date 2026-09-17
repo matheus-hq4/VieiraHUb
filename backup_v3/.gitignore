@@ -1,0 +1,15 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env
+.env.local
+!.env.example
+backup_v1/
+backup_v2/
+backup_principal/
+scratch/
+data/
+logs/

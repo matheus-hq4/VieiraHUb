@@ -1,0 +1,6 @@
+{
+  "name": "VieiraTech HUB",
+  "description": "Central de acessos e launchpad corporativo da VieiraTech para centralizar ferramentas, URLs, servidores e IPs internos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

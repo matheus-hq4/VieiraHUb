@@ -1,0 +1,1463 @@
+<!doctype html>
+<html lang="pt-BR" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VieiraTech HUB </title>
+    <meta name="description" content="Central corporativa de acessos, ferramentas, IPs e servidores com assistente de IA Gemini." />
+
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- Tailwind CSS (Play CDN with class-based Dark Mode configuration) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white transition-colors duration-200">
+    
+    <!-- 1. MAIN HEADER -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-lg shadow-md shadow-blue-500/20">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">VIEIRATECH</span>
+              <span class="text-xs px-1.5 py-0.5 rounded-md font-black bg-blue-600 text-white tracking-wide">HUB</span>
+            </div>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono -mt-0.5">Central de Infra & Acessos</p>
+          </div>
+        </div>
+
+        <!-- PRIMARY 4 NAVIGATION TABS (Desktop & Tablet) -->
+        <nav class="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-700">
+          <button
+            id="tab-nav-apps"
+            type="button"
+            class="tab-nav-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-blue-600 text-white shadow-xs"
+            data-tab="apps"
+          >
+            <i class="fa-solid fa-layer-group text-xs"></i>
+            <span>Acessos & Apps</span>
+          </button>
+          <button
+            id="tab-nav-vault"
+            type="button"
+            class="tab-nav-btn px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            data-tab="vault"
+          >
+            <i class="fa-solid fa-key text-xs text-amber-500"></i>
+            <span>Cofre de Senhas</span>
+          </button>
+          <button
+            id="tab-nav-inventory"
+            type="button"
+            class="tab-nav-btn px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            data-tab="inventory"
+          >
+            <i class="fa-solid fa-boxes-stacked text-xs text-emerald-500"></i>
+            <span>Estoque TI</span>
+          </button>
+          <button
+            id="tab-nav-logins"
+            type="button"
+            class="tab-nav-btn px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            data-tab="logins"
+          >
+            <i class="fa-solid fa-users-viewfinder text-xs text-blue-400"></i>
+            <span>Logins AD</span>
+          </button>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <!-- Add Tool Button -->
+          <button
+            id="open-add-tool-btn"
+            type="button"
+            class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Cadastrar nova ferramenta"
+          >
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span class="hidden lg:inline">Nova Ferramenta</span>
+          </button>
+
+          <!-- JSON Editor Button -->
+          <button
+            id="open-json-modal-btn"
+            type="button"
+            class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Editor JSON e Backup de Ferramentas"
+          >
+            <i class="fa-solid fa-code text-xs"></i>
+            <span class="hidden xl:inline">JSON</span>
+          </button>
+
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
+
+          <!-- Pinned Filter Toggle -->
+          <button
+            id="toggle-pinned-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Exibir apenas favoritos / fixados"
+          >
+            <i class="fa-solid fa-thumbtack text-xs"></i>
+          </button>
+
+          <!-- View Mode Toggle (Grid/List) -->
+          <button
+            id="toggle-view-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Alternar entre modo grade e lista"
+          >
+            <i class="fa-solid fa-table-cells-large text-xs"></i>
+          </button>
+
+          <!-- Dark Mode Toggle -->
+          <button
+            id="toggle-theme-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Alternar tema claro/escuro"
+          >
+            <i id="theme-toggle-icon" class="fa-solid fa-moon text-slate-600 text-xs"></i>
+          </button>
+
+
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
+
+          <!-- Single User & Admin Menu Dropdown -->
+          <div class="relative">
+            <button
+              id="user-menu-btn"
+              type="button"
+              class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs relative"
+              title="Menu da Conta"
+            >
+              <i class="fa-solid fa-user-shield text-xs text-blue-500"></i>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5 ring-2 ring-white dark:ring-slate-900"></span>
+            </button>
+
+            <!-- Dropdown Popover -->
+            <div
+              id="user-menu-dropdown"
+              class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl py-2 z-50 animate-fade-in text-xs"
+            >
+              <!-- User Info Header -->
+              <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+                    <span id="dropdown-user-initial">A</span>
+                  </div>
+                  <div class="overflow-hidden">
+                    <p id="dropdown-user-name" class="font-bold text-slate-900 dark:text-white truncate">Administrador</p>
+                    <span id="dropdown-user-role" class="text-[10px] font-semibold text-blue-600 dark:text-blue-400">Admin</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Menu Actions -->
+              <div class="p-1 space-y-0.5">
+                <!-- Ver / Gerenciar Usuários (Admin Only) -->
+                <button
+                  id="admin-users-btn"
+                  type="button"
+                  class="hidden w-full px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-2.5 transition-colors text-left cursor-pointer"
+                >
+                  <i class="fa-solid fa-users-gear text-blue-500 text-xs w-4 text-center"></i>
+                  <span class="font-medium">Gerenciar Usuários</span>
+                </button>
+
+                <!-- Sair / Logout -->
+                <button
+                  id="logout-btn"
+                  type="button"
+                  class="w-full px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2.5 transition-colors text-left cursor-pointer"
+                >
+                  <i class="fa-solid fa-right-from-bracket text-xs w-4 text-center"></i>
+                  <span class="font-medium">Sair do HUB</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- 2. MAIN CONTENT -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
+      
+      <!-- Mobile Sub-Navigation Bar -->
+      <nav class="flex md:hidden items-center gap-1 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        <button
+          type="button"
+          class="tab-nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-blue-600 text-white shadow-xs"
+          data-tab="apps"
+        >
+          <i class="fa-solid fa-layer-group text-xs"></i>
+          <span>Acessos</span>
+        </button>
+        <button
+          type="button"
+          class="tab-nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+          data-tab="vault"
+        >
+          <i class="fa-solid fa-key text-xs text-amber-500"></i>
+          <span>Cofre</span>
+        </button>
+        <button
+          type="button"
+          class="tab-nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+          data-tab="inventory"
+        >
+          <i class="fa-solid fa-boxes-stacked text-xs text-emerald-500"></i>
+          <span>Estoque</span>
+        </button>
+        <button
+          type="button"
+          class="tab-nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+          data-tab="logins"
+        >
+          <i class="fa-solid fa-users-viewfinder text-xs text-blue-400"></i>
+          <span>Logins AD</span>
+        </button>
+      </nav>
+
+      <!-- ==================== PANE 1: ACESSOS & APPS ==================== -->
+      <section id="pane-apps" class="tab-pane flex-1 flex flex-col">
+        <!-- Simple Hero Section -->
+        <div class="bg-gradient-to-br from-blue-900 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 text-white mb-8 border border-slate-800/80 shadow-lg relative overflow-hidden">
+          <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold mb-3">
+              <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+              Launchpad de Infraestrutura & TI
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
+              Central de Acessos VieiraTech
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6">
+              Acesso rápido a painéis MikroTik, TrueNAS, n8n, Proxmox, Portainer e servidores internos. Copie IPs, protocolos e use o assistente IA para diagnósticos rápidos.
+            </p>
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                id="hero-add-tool-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Adicionar Ferramenta</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Background Glow Deco -->
+          <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 pb-2">
+          <!-- Categories Pills Container -->
+          <div id="categories-container" class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none flex-wrap sm:flex-nowrap">
+            <!-- Injected via JavaScript -->
+          </div>
+
+          <!-- Right Side: Search Input & Tools Counter -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <!-- Search Input -->
+            <div class="relative w-full sm:w-72 lg:w-80">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+              </div>
+              <input
+                id="search-input"
+                type="text"
+                placeholder="Buscar por nome, IP, porta... (Ctrl+K)"
+                class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
+              />
+              <button
+                id="search-clear-btn"
+                type="button"
+                class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <i class="fa-solid fa-xmark text-xs"></i>
+              </button>
+            </div>
+
+            <!-- Showing Counter Info -->
+            <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap self-end sm:self-auto">
+              <span>
+                Exibindo <strong id="filtered-tools-count" class="text-blue-600 dark:text-blue-400 font-bold">0</strong> de <strong id="total-tools-count" class="text-slate-800 dark:text-slate-200">0</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tools Grid / List Container -->
+        <div id="tools-container">
+          <!-- Cards injected dynamically via app.js -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden py-16 text-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 max-w-md mx-auto shadow-xs my-auto">
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto mb-4 text-xl">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
+            Nenhuma ferramenta encontrada
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+            Não encontramos nenhum item correspondente ao filtro de busca atual.
+          </p>
+          <button
+            id="empty-state-clear-btn"
+            type="button"
+            class="px-4 py-2 text-xs font-semibold rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            Limpar Filtros
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================== PANE 2: COFRE DE SENHAS ==================== -->
+      <section id="pane-vault" class="tab-pane hidden flex-1 flex flex-col">
+        <!-- Vault Hero -->
+        <div class="bg-gradient-to-br from-amber-950 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 text-white mb-8 border border-slate-800/80 shadow-lg relative overflow-hidden">
+          <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold mb-3">
+              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              Cofre Corporativo & Credenciais
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
+              Gerenciador de Senhas da Empresa
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6">
+              Armazenamento seguro de redes Wi-Fi, credenciais de infraestrutura, servidores, switches e acessos da equipe de TI. Todas as senhas protegidas com visualização sob clique.
+            </p>
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                id="open-add-password-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/25 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Nova Senha</span>
+              </button>
+              <button
+                id="open-generator-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-amber-300 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-wand-magic-sparkles text-xs text-amber-400"></i>
+                <span>Gerador de Senhas</span>
+              </button>
+            </div>
+          </div>
+          <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+
+        <!-- Filter & Search Bar for Vault -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 pb-2">
+          <!-- Categories Container -->
+          <div id="vault-categories-container" class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none flex-wrap sm:flex-nowrap">
+            <!-- Dynamic via vault.js -->
+          </div>
+
+          <!-- Search Input & Counter -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div class="relative w-full sm:w-72 lg:w-80">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+              </div>
+              <input
+                id="vault-search-input"
+                type="text"
+                placeholder="Buscar por Wi-Fi, serviço, login..."
+                class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
+              />
+              <button
+                id="vault-search-clear-btn"
+                type="button"
+                class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <i class="fa-solid fa-xmark text-xs"></i>
+              </button>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap self-end sm:self-auto">
+              <span>Exibindo <strong id="vault-filtered-count" class="text-amber-500 font-bold">0</strong> de <strong id="vault-total-count" class="text-slate-800 dark:text-slate-200">0</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passwords Grid -->
+        <div id="vault-passwords-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Injected via vault.js -->
+        </div>
+      </section>
+
+      <!-- ==================== PANE 3: CONTROLE DE ESTOQUE TI ==================== -->
+      <section id="pane-inventory" class="tab-pane hidden flex-1 flex flex-col">
+        <!-- Inventory Hero -->
+        <div class="bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 text-white mb-8 border border-slate-800/80 shadow-lg relative overflow-hidden">
+          <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-3">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Inventário & Peças de TI
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
+              Controle de Estoque & Equipamentos
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6">
+              Gestão ágil de periféricos, headsets de atendimento, mouses, teclados, cabos de rede e switches reserva da VieiraCred com botões rápidos de entrada e baixa.
+            </p>
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                id="open-add-inventory-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Novo Item de Estoque</span>
+              </button>
+            </div>
+          </div>
+          <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+
+        <!-- Filter & Search Bar for Inventory -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 pb-2">
+          <!-- Categories Container -->
+          <div id="inventory-categories-container" class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none flex-wrap sm:flex-nowrap">
+            <!-- Dynamic via inventory.js -->
+          </div>
+
+          <!-- Search Input & Counters -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div class="relative w-full sm:w-72 lg:w-80">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+              </div>
+              <input
+                id="inventory-search-input"
+                type="text"
+                placeholder="Buscar por headset, cabo, switch..."
+                class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
+              />
+              <button
+                id="inventory-search-clear-btn"
+                type="button"
+                class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <i class="fa-solid fa-xmark text-xs"></i>
+              </button>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap self-end sm:self-auto">
+              <span>Total: <strong id="inventory-total-count" class="text-slate-800 dark:text-slate-200 font-bold">0</strong></span>
+              <span class="text-amber-500 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                Estoque Baixo: <strong id="inventory-low-count" class="font-bold">0</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Items Grid -->
+        <div id="inventory-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Injected via inventory.js -->
+        </div>
+      </section>
+
+      <!-- ==================== PANE 4: LOGINS AD ==================== -->
+      <section id="pane-logins" class="tab-pane hidden flex-1 flex flex-col">
+        <!-- Logins AD Hero -->
+        <div class="bg-gradient-to-br from-blue-950 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 text-white mb-8 border border-slate-800/80 shadow-lg relative overflow-hidden">
+          <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold mb-3">
+              <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+              Active Directory VieiraCred
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
+              Mapeamento Organizacional & Logins AD
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6">
+              Mapeamento de usuários, setores e todas as Espinhas da Operação VieiraCred com senhas protegidas por padrão e suporte completo a exportação e importação de bloco de notas TXT.
+            </p>
+            <div class="flex flex-wrap items-center gap-3">
+              <a
+                href="/logins.html"
+                class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-up-right-from-square text-xs"></i>
+                <span>Abrir Editor Completo de Logins AD</span>
+              </a>
+            </div>
+          </div>
+          <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-blue-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+
+        <!-- Embedded AD Search & Container -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div class="relative w-full sm:w-96">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </div>
+            <input
+              id="pane-ad-search-input"
+              type="text"
+              placeholder="Buscar usuário, e-mail, supervisor, espinha..."
+              class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
+            />
+          </div>
+          <a
+            href="/logins.html"
+            class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs self-start sm:self-auto"
+          >
+            <i class="fa-solid fa-file-lines text-blue-500 text-xs"></i>
+            <span>Gerenciar Bloco de Notas / TXT</span>
+          </a>
+        </div>
+
+        <div id="pane-ad-departments-container" class="space-y-4">
+          <!-- Loaded dynamically -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 3. FOOTER -->
+    <footer class="mt-auto border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-bold text-slate-700 dark:text-slate-200">VieiraTech HUB</span>
+          <span class="text-slate-400 dark:text-slate-600">&bull;</span>
+          <span>Central de Ferramentas & Acessos Internos</span>
+        </div>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+          <span id="hero-total-count">0</span> serviços mapeados &bull; Assistente IA Gemini integrado
+        </p>
+      </div>
+    </footer>
+
+    <!-- ==================== MODALS & DRAWERS ==================== -->
+
+    <!-- TOOL MODAL (Adicionar / Editar) -->
+    <div id="tool-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 id="tool-modal-title" class="text-base font-bold text-slate-900 dark:text-white">
+              Cadastrar Nova Ferramenta
+            </h3>
+            <button
+              id="tool-modal-close-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <form id="tool-modal-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Nome do Serviço / Ferramenta <span class="text-red-500">*</span>
+              </label>
+              <input
+                name="tool-name"
+                type="text"
+                required
+                placeholder="Ex: MikroTik CCR1036"
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  URL ou Endereço IP <span class="text-red-500">*</span>
+                </label>
+                <input
+                  name="tool-url"
+                  type="text"
+                  required
+                  placeholder="Ex: 192.168.88.1 ou https://app.corp"
+                  class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Porta (Opcional)
+                </label>
+                <input
+                  name="tool-port"
+                  type="text"
+                  placeholder="Ex: 8728, 443, 80"
+                  class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Categoria
+                </label>
+                <select
+                  name="tool-category"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Infraestrutura">Infraestrutura</option>
+                  <option value="Servidores">Servidores</option>
+                  <option value="Automação">Automação</option>
+                  <option value="Suporte">Suporte</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Protocolo
+                </label>
+                <select
+                  name="tool-protocol"
+                  class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="HTTPS">HTTPS</option>
+                  <option value="HTTP">HTTP</option>
+                  <option value="Winbox">Winbox</option>
+                  <option value="SSH">SSH</option>
+                  <option value="RDP">RDP</option>
+                  <option value="Telnet">Telnet</option>
+                  <option value="TCP">TCP</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Ambiente
+                </label>
+                <select
+                  name="tool-environment"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Produção">Produção</option>
+                  <option value="Homologação">Homologação</option>
+                  <option value="DMZ">DMZ</option>
+                  <option value="Local">Local</option>
+                  <option value="Cloud">Cloud</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Visual Icon Picker -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Ícone da Ferramenta
+                </label>
+                <span class="text-[10px] text-slate-400">Clique para selecionar</span>
+              </div>
+
+              <!-- Selected Icon Preview & Input Sync -->
+              <div class="flex items-center gap-3 mb-2 p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                <div id="icon-preview-box" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-md shadow-blue-500/20 shrink-0 transition-transform">
+                  <i id="icon-preview-icon" class="fa-solid fa-server"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <input
+                    id="tool-icon-input"
+                    name="tool-icon"
+                    type="text"
+                    value="fa-solid fa-server"
+                    placeholder="Classe FontAwesome..."
+                    class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <!-- Preset Icon Options Grid -->
+              <div id="preset-icons-grid" class="grid grid-cols-7 sm:grid-cols-9 gap-1.5 p-2 rounded-2xl bg-slate-100/80 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 max-h-32 overflow-y-auto">
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-server" title="Servidor"><i class="fa-solid fa-server"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-network-wired" title="Rede / Switch"><i class="fa-solid fa-network-wired"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-satellite-dish" title="Roteador / Borda"><i class="fa-solid fa-satellite-dish"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-brands fa-docker" title="Docker / Portainer"><i class="fa-brands fa-docker"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-brands fa-linux" title="Linux"><i class="fa-brands fa-linux"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-brands fa-windows" title="Windows / AD"><i class="fa-brands fa-windows"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-hard-drive" title="Storage / TrueNAS"><i class="fa-solid fa-hard-drive"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-database" title="Banco de Dados"><i class="fa-solid fa-database"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-shield-halved" title="Firewall / pfSense"><i class="fa-solid fa-shield-halved"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-robot" title="Automação / n8n"><i class="fa-solid fa-robot"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-terminal" title="Terminal / SSH / Ansible"><i class="fa-solid fa-terminal"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-code" title="Código / APIs"><i class="fa-solid fa-code"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-chart-line" title="Monitoramento / Zabbix"><i class="fa-solid fa-chart-line"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-gauge-high" title="Métricas / Grafana"><i class="fa-solid fa-gauge-high"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-headset" title="Suporte / GLPI"><i class="fa-solid fa-headset"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-users" title="Usuários / WAC"><i class="fa-solid fa-users"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-cloud" title="Cloud"><i class="fa-solid fa-cloud"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-cubes" title="Kubernetes / Containers"><i class="fa-solid fa-cubes"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-lock" title="Segurança / Vault"><i class="fa-solid fa-lock"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-key" title="Credenciais"><i class="fa-solid fa-key"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-wifi" title="Wi-Fi / AP"><i class="fa-solid fa-wifi"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-microchip" title="Hardware / CPU"><i class="fa-solid fa-microchip"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-gears" title="Configurações / DevOps"><i class="fa-solid fa-gears"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-box-archive" title="Backup / Arquivos"><i class="fa-solid fa-box-archive"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-globe" title="Web / Portal"><i class="fa-solid fa-globe"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-diagram-project" title="Topologia / Diagramas"><i class="fa-solid fa-diagram-project"></i></button>
+                <button type="button" class="preset-icon-btn h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer text-sm" data-icon="fa-solid fa-layer-group" title="Sistemas Gerais"><i class="fa-solid fa-layer-group"></i></button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Descrição Curta do Serviço
+              </label>
+              <textarea
+                name="tool-description"
+                rows="2"
+                placeholder="Ex: Roteador perimetral responsável pelas rotas BGP e queues de banda..."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                <span>Anotações & Documentação Interna (Markdown)</span>
+                <span class="text-[10px] text-slate-400 font-normal">Opcional</span>
+              </label>
+              <textarea
+                name="tool-notes"
+                rows="3"
+                placeholder="Ex: Procedimentos de suporte, credenciais de teste, rotas, VLANs, etc..."
+                class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              ></textarea>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="tool-pinned"
+                name="tool-pinned"
+                class="rounded-md text-blue-600 focus:ring-blue-500 dark:bg-slate-800"
+              />
+              <label for="tool-pinned" class="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                Fixar no topo dos favoritos
+              </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                id="tool-modal-cancel-btn"
+                type="button"
+                class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+              >
+                Salvar Ferramenta
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- JSON EDITOR MODAL -->
+    <div id="json-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">Editor JSON & Backup em Lote</h3>
+              <p class="text-xs text-slate-400 dark:text-slate-500">Visualize, exporte ou importe as configurações em formato JSON.</p>
+            </div>
+            <button
+              id="json-modal-close-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <textarea
+              id="json-textarea"
+              rows="14"
+              class="w-full p-3 font-mono text-xs rounded-2xl bg-slate-950 text-slate-200 border border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 leading-relaxed"
+            ></textarea>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <button
+                id="json-copy-btn"
+                type="button"
+                class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <i class="fa-regular fa-copy text-xs"></i>
+                <span>Copiar</span>
+              </button>
+              <button
+                id="json-download-btn"
+                type="button"
+                class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <i class="fa-solid fa-download text-xs"></i>
+                <span>Baixar JSON</span>
+              </button>
+              <label class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-upload text-xs"></i>
+                <span>Carregar Arquivo</span>
+                <input id="json-upload-input" type="file" accept=".json" class="hidden" />
+              </label>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                id="json-reset-btn"
+                type="button"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+              >
+                Restaurar Padrão
+              </button>
+              <button
+                id="json-save-btn"
+                type="button"
+                class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- VAULT MODAL (Adicionar / Editar Senha Corporativa) -->
+    <div id="vault-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-key text-xs"></i>
+              </div>
+              <h3 id="vault-modal-title" class="text-base font-bold text-slate-900 dark:text-white">
+                Cadastrar Nova Senha Corporativa
+              </h3>
+            </div>
+            <button
+              id="vault-modal-close-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <form id="vault-modal-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Título / Serviço <span class="text-red-500">*</span>
+              </label>
+              <input
+                name="vault-title"
+                type="text"
+                required
+                placeholder="Ex: Wi-Fi Diretoria, Switch Core, Root Debian..."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500 font-sans"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Categoria
+              </label>
+              <select
+                name="vault-category"
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500 font-sans"
+              >
+                <option value="Wi-Fi">Wi-Fi</option>
+                <option value="Infra TI">Infra TI</option>
+                <option value="Servidores">Servidores</option>
+                <option value="Contas / Web">Contas / Web</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Usuário / SSID / Login (Opcional)
+              </label>
+              <input
+                name="vault-username"
+                type="text"
+                placeholder="Ex: admin, root, VieiraCred_Diretoria..."
+                class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Senha de Acesso <span class="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onclick="document.getElementById('open-generator-btn').click()"
+                  class="text-[11px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+                >
+                  <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                  <span>Gerar Senha</span>
+                </button>
+              </div>
+              <input
+                id="vault-form-password"
+                name="vault-password"
+                type="text"
+                required
+                placeholder="Ex: SenhaForte#2026!"
+                class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Observações / Informações Adicionais
+              </label>
+              <textarea
+                name="vault-notes"
+                rows="2"
+                placeholder="Ex: IP 192.168.88.1, VLAN 99, roteador localizado na recepção..."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+              ></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                id="vault-modal-cancel-btn"
+                type="button"
+                class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+              >
+                Salvar Senha
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- GENERATOR MODAL (Gerador de Senhas Integrado) -->
+    <div id="generator-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                Gerador de Senha Segura
+              </h3>
+            </div>
+            <button
+              id="generator-modal-close-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Password Display -->
+          <div class="mb-4 bg-slate-100 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+            <input
+              id="gen-result-input"
+              type="text"
+              readonly
+              class="w-full bg-transparent font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-white focus:outline-hidden select-all"
+            />
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                id="gen-refresh-btn"
+                type="button"
+                class="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Gerar nova"
+              >
+                <i class="fa-solid fa-rotate text-xs"></i>
+              </button>
+              <button
+                id="gen-copy-btn"
+                type="button"
+                class="p-1.5 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Copiar senha"
+              >
+                <i class="fa-regular fa-copy text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Length Range -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between text-xs font-semibold mb-1">
+              <span class="text-slate-700 dark:text-slate-300">Tamanho da Senha:</span>
+              <span id="gen-length-display" class="font-mono font-bold text-blue-600 dark:text-blue-400">16</span>
+            </div>
+            <input
+              id="gen-length-range"
+              type="range"
+              min="8"
+              max="32"
+              value="16"
+              class="w-full accent-blue-600 cursor-pointer"
+            />
+          </div>
+
+          <!-- Options Checkboxes -->
+          <div class="space-y-2 mb-5 text-xs text-slate-700 dark:text-slate-300">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="gen-opt-upper" type="checkbox" checked class="rounded text-blue-600 dark:bg-slate-800" />
+              <span>Letras Maiúsculas (A-Z)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="gen-opt-lower" type="checkbox" checked class="rounded text-blue-600 dark:bg-slate-800" />
+              <span>Letras Minúsculas (a-z)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="gen-opt-numbers" type="checkbox" checked class="rounded text-blue-600 dark:bg-slate-800" />
+              <span>Números (0-9)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="gen-opt-symbols" type="checkbox" checked class="rounded text-blue-600 dark:bg-slate-800" />
+              <span>Caracteres Especiais (!@#$%^&*)</span>
+            </label>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button
+              id="gen-apply-btn"
+              type="button"
+              class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer text-center"
+            >
+              Aplicar no Cadastro
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTORY MODAL (Adicionar / Editar Item de Estoque) -->
+    <div id="inventory-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-boxes-stacked text-xs"></i>
+              </div>
+              <h3 id="inventory-modal-title" class="text-base font-bold text-slate-900 dark:text-white">
+                Cadastrar Item no Estoque
+              </h3>
+            </div>
+            <button
+              id="inventory-modal-close-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <form id="inventory-modal-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Nome do Item / Equipamento <span class="text-red-500">*</span>
+              </label>
+              <input
+                name="inv-name"
+                type="text"
+                required
+                placeholder="Ex: Headset USB Intelbras, Mouse Dell, Patch Cord Cat6..."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-sans"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Categoria
+                </label>
+                <select
+                  name="inv-category"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-sans"
+                >
+                  <option value="Periféricos">Periféricos</option>
+                  <option value="Cabos">Cabos</option>
+                  <option value="Hardware">Hardware</option>
+                  <option value="Redes">Redes</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Status
+                </label>
+                <select
+                  name="inv-status"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-sans"
+                >
+                  <option value="Disponível">Disponível</option>
+                  <option value="Em Manutenção">Em Manutenção</option>
+                  <option value="Reservado">Reservado</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Quantidade Atual
+                </label>
+                <input
+                  name="inv-quantity"
+                  type="number"
+                  min="0"
+                  value="1"
+                  required
+                  class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Quantidade Mínima
+                </label>
+                <input
+                  name="inv-min"
+                  type="number"
+                  min="0"
+                  value="2"
+                  required
+                  class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Localização no Escritório
+              </label>
+              <input
+                name="inv-location"
+                type="text"
+                placeholder="Ex: Armário TI, Rack Servidores, Bancada..."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Observações
+              </label>
+              <textarea
+                name="inv-notes"
+                rows="2"
+                placeholder="Ex: Modelo ABNT2, conector RJ9, cabo blindado..."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              ></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                id="inventory-modal-cancel-btn"
+                type="button"
+                class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                Salvar Item
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div
+      id="toast-container"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"
+    >
+      <div class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-800 dark:border-slate-200 text-xs font-semibold">
+        <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600 text-sm"></i>
+        <span id="toast-message">Mensagem de feedback</span>
+      </div>
+    </div>
+
+    <!-- ==================== USERS MANAGEMENT MODAL (Admin Only) ==================== -->
+    <div id="users-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-users-gear"></i>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                Gerenciamento de Usuários de TI
+              </h3>
+            </div>
+            <button
+              id="users-modal-close-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Novo Usuário Form -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 mb-5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-user-plus text-blue-500"></i> Cadastrar Novo Membro da Equipe
+            </h4>
+            <form id="new-user-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Nome Completo</label>
+                <input
+                  id="user-form-name"
+                  type="text"
+                  required
+                  placeholder="Ex: Matheus Henrique"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Usuário (Login)</label>
+                <input
+                  id="user-form-username"
+                  type="text"
+                  required
+                  placeholder="Ex: matheus"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Senha Inicial</label>
+                <input
+                  id="user-form-password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Papel / Nível</label>
+                <select
+                  id="user-form-role"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="operador">Técnico / Operador (Acesso padrão)</option>
+                  <option value="admin">Administrador (Controle total)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2 flex justify-end pt-1">
+                <button
+                  type="submit"
+                  class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i class="fa-solid fa-plus text-xs"></i>
+                  <span>Criar Usuário</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Lista de Usuários Existentes -->
+          <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center justify-between">
+              <span>Usuários Ativos no Servidor</span>
+              <span id="users-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">0</span>
+            </h4>
+            <div class="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="px-3.5 py-2.5 font-bold">Nome</th>
+                    <th class="px-3.5 py-2.5 font-bold">Usuário</th>
+                    <th class="px-3.5 py-2.5 font-bold">Papel</th>
+                    <th class="px-3.5 py-2.5 font-bold text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                  <!-- Linhas renderizadas via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
+    <div id="login-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+      <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-2xl relative overflow-hidden animate-fade-in">
+        
+        <!-- Glow deco -->
+        <div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-600/20 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/25 mx-auto mb-3">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">VIEIRATECH</span>
+            <span class="text-xs px-1.5 py-0.5 rounded-md font-black bg-blue-600 text-white tracking-wide">HUB</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Acesso restrito para a equipe de TI e Infraestrutura
+          </p>
+        </div>
+
+        <!-- Error message banner -->
+        <div id="login-error-msg" class="hidden mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>
+          <span>Usuário ou senha incorretos.</span>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Usuário
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-user text-xs"></i>
+              </div>
+              <input
+                id="login-username"
+                type="text"
+                required
+                autocomplete="username"
+                placeholder="vieiratech"
+                class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-sans"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Senha de Acesso
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-lock text-xs"></i>
+              </div>
+              <input
+                id="login-password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full pl-9 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+              <button
+                id="toggle-pass-visibility"
+                type="button"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                title="Mostrar / ocultar senha"
+              >
+                <i class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-1">
+            <label class="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+              <input
+                id="login-remember"
+                type="checkbox"
+                checked
+                class="rounded-md text-blue-600 focus:ring-blue-500 dark:bg-slate-800"
+              />
+              <span>Manter conectado</span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+          >
+            <span>Entrar no HUB</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

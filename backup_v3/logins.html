@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="pt-BR" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mapeamento de Logins AD & Usuários - VieiraTech HUB</title>
+    <meta name="description" content="Central de mapeamento organizacional de logins AD, e-mails e credenciais com importação e exportação de bloco de notas." />
+
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- Tailwind CSS (Play CDN with class-based Dark Mode configuration) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white transition-colors duration-200">
+
+    <!-- 1. MAIN HEADER -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        
+        <!-- Left: Back link and Title -->
+        <div class="flex items-center gap-3 shrink-0">
+          <a
+            href="/"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
+            title="Voltar para a página principal do HUB"
+          >
+            <i class="fa-solid fa-arrow-left text-xs"></i>
+            <span>Voltar ao HUB</span>
+          </a>
+
+          <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs shadow-md shadow-blue-500/20">
+              <i class="fa-solid fa-users-viewfinder"></i>
+            </div>
+            <div>
+              <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
+                Mapeamento Organizacional & Logins AD
+              </h1>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono -mt-0.5">
+                Central de Usuários & Credenciais do Active Directory
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: View Switcher & Actions -->
+        <div class="flex items-center gap-2">
+          
+          <!-- View Modes Pills -->
+          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
+            <button
+              id="view-explorer-btn"
+              type="button"
+              class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <i class="fa-solid fa-table-cells-large text-xs"></i>
+              <span>Visualizador</span>
+            </button>
+            <button
+              id="view-editor-btn"
+              type="button"
+              class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <i class="fa-regular fa-note-sticky text-xs"></i>
+              <span>Bloco de Notas / TXT</span>
+            </button>
+          </div>
+
+          <!-- Dark Mode Toggle -->
+          <button
+            id="toggle-theme-btn"
+            type="button"
+            class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            title="Alternar tema claro/escuro"
+          >
+            <i id="theme-toggle-icon" class="fa-solid fa-moon text-slate-600 text-xs"></i>
+          </button>
+
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
+
+          <!-- Single User & Admin Menu Dropdown -->
+          <div class="relative">
+            <button
+              id="user-menu-btn"
+              type="button"
+              class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-700 flex items-center justify-center transition-all cursor-pointer shadow-2xs relative"
+              title="Menu da Conta"
+            >
+              <i class="fa-solid fa-user-shield text-xs text-blue-500"></i>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5 ring-2 ring-white dark:ring-slate-900"></span>
+            </button>
+
+            <!-- Dropdown Popover -->
+            <div
+              id="user-menu-dropdown"
+              class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl py-2 z-50 animate-fade-in text-xs"
+            >
+              <!-- User Info Header -->
+              <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+                    <span id="dropdown-user-initial">A</span>
+                  </div>
+                  <div class="overflow-hidden">
+                    <p id="dropdown-user-name" class="font-bold text-slate-900 dark:text-white truncate">Administrador</p>
+                    <span id="dropdown-user-role" class="text-[10px] font-semibold text-blue-600 dark:text-blue-400">Admin</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Menu Actions -->
+              <div class="p-1 space-y-0.5">
+                <!-- Sair / Logout -->
+                <button
+                  id="logout-btn"
+                  type="button"
+                  class="w-full px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2.5 transition-colors text-left cursor-pointer"
+                >
+                  <i class="fa-solid fa-right-from-bracket text-xs w-4 text-center"></i>
+                  <span class="font-medium">Sair do HUB</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- 2. MAIN CONTENT -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
+      
+      <!-- ==================== VIEW 1: EXPLORER & REAL-TIME SEARCH ==================== -->
+      <section id="explorer-section" class="flex-1 flex flex-col">
+        
+        <!-- Search & Stats Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          
+          <!-- Search Bar -->
+          <div class="relative w-full md:w-96">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </div>
+            <input
+              id="search-logins-input"
+              type="text"
+              placeholder="Buscar por usuário, e-mail, departamento, espinha..."
+              class="w-full pl-9 pr-8 py-2.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
+            />
+            <button
+              id="search-logins-clear-btn"
+              type="button"
+              class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Counter and Quick Actions -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+              Exibindo <strong id="filtered-entries-count" class="text-blue-600 dark:text-blue-400 font-bold">0</strong> de <strong id="total-entries-count" class="text-slate-800 dark:text-slate-200">0</strong> contas
+            </span>
+
+            <!-- Add User Button -->
+            <button
+              id="open-add-user-btn"
+              type="button"
+              class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <i class="fa-solid fa-user-plus text-xs"></i>
+              <span>Novo Usuário</span>
+            </button>
+
+            <!-- Switch to Notepad Button -->
+            <button
+              type="button"
+              onclick="document.getElementById('view-editor-btn').click()"
+              class="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            >
+              <i class="fa-solid fa-file-import text-blue-500 text-xs"></i>
+              <span>Importar / TXT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Departments & Users Container -->
+        <div id="departments-container" class="space-y-4">
+          <!-- Injected dynamically via JS -->
+        </div>
+
+      </section>
+
+      <!-- ==================== VIEW 2: RAW NOTEPAD & IMPORT/EXPORT ==================== -->
+      <section id="editor-section" class="hidden flex-1 flex flex-col min-h-[580px] bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        
+        <!-- Header Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm">
+              <i class="fa-regular fa-note-sticky"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Bloco de Notas de Logins AD (TXT)</span>
+              </h2>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                Edite o texto livremente ou importe/exporte seu arquivo TXT com o mapeamento do Active Directory.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Save Status Indicator -->
+            <div id="editor-save-status" class="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/60">
+              <i class="fa-solid fa-check text-emerald-500 text-xs"></i>
+              <span>Salvo no navegador</span>
+            </div>
+
+            <!-- Copy All -->
+            <button
+              id="copy-all-btn"
+              type="button"
+              class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Copiar texto completo"
+            >
+              <i class="fa-regular fa-copy text-xs"></i>
+              <span>Copiar Tudo</span>
+            </button>
+
+            <!-- Download TXT -->
+            <button
+              id="download-txt-btn"
+              type="button"
+              class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Baixar como arquivo .txt"
+            >
+              <i class="fa-solid fa-download text-xs"></i>
+              <span>Baixar .txt</span>
+            </button>
+
+            <!-- Import TXT -->
+            <label class="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20">
+              <i class="fa-solid fa-upload text-xs"></i>
+              <span>Importar .txt</span>
+              <input id="import-txt-input" type="file" accept=".txt,.md,.json" class="hidden" />
+            </label>
+
+            <!-- Reset Default -->
+            <button
+              id="reset-default-btn"
+              type="button"
+              class="p-1.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+              title="Restaurar padrão"
+            >
+              <i class="fa-solid fa-rotate-left text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Textarea -->
+        <div class="flex-1 flex flex-col relative">
+          <textarea
+            id="logins-textarea"
+            placeholder="Cole ou digite aqui o mapeamento de logins e senhas..."
+            class="w-full flex-1 p-4 text-xs sm:text-sm font-mono rounded-2xl bg-slate-50/80 dark:bg-slate-950/80 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-950 leading-relaxed resize-none transition-all shadow-inner"
+            spellcheck="false"
+            rows="20"
+          ></textarea>
+        </div>
+
+        <!-- Footer status bar -->
+        <div class="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+          <div class="flex items-center gap-3">
+            <span id="editor-line-count">Linhas: 1</span>
+            <span>&bull;</span>
+            <span id="editor-char-count">Caracteres: 0</span>
+          </div>
+          <div>
+            <span>Sincronizado com o Visualizador Interativo</span>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- 3. FOOTER -->
+    <footer class="mt-auto border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-bold text-slate-700 dark:text-slate-200">VieiraTech HUB</span>
+          <span class="text-slate-400 dark:text-slate-600">&bull;</span>
+          <span>Central de Mapeamento Organizacional & Logins</span>
+        </div>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+          Senhas protegidas por padrão &bull; Exportação e importação .txt
+        </p>
+      </div>
+    </footer>
+
+    <!-- ==================== MODAL DE ADICIONAR NOVO USUÁRIO ==================== -->
+    <div id="add-user-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+      <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-user-plus text-xs"></i>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                Cadastrar Novo Usuário / Login
+              </h3>
+            </div>
+            <button
+              id="close-add-user-modal-btn"
+              type="button"
+              class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+
+          <form id="add-user-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Departamento / Setor <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="modal-user-dept"
+                type="text"
+                list="departments-datalist"
+                required
+                placeholder="Ex: FINANCEIRO ou OPERAÇÃO VIERACRED"
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+              <datalist id="departments-datalist">
+                <option value="CEO / DIRETORIA"></option>
+                <option value="FINANCEIRO"></option>
+                <option value="RH/DP"></option>
+                <option value="RECEPÇÃO"></option>
+                <option value="MARKETING"></option>
+                <option value="PLANEJAMENTO"></option>
+                <option value="GERENCIA"></option>
+                <option value="BACKOFFICE"></option>
+                <option value="MESA LIBERAÇÂO / QUALIDADE"></option>
+                <option value="EXPANDE"></option>
+                <option value="VIEIRATECH - TI"></option>
+                <option value="OPERAÇÃO VIERACRED"></option>
+              </datalist>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Sub-Setor / Espinha (Opcional)
+              </label>
+              <input
+                id="modal-user-subdept"
+                type="text"
+                list="subdepts-datalist"
+                placeholder="Ex: Espinha 01, SUPERVISOR(A), etc."
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              />
+              <datalist id="subdepts-datalist">
+                <option value="SUPERVISOR(A)"></option>
+                <option value="OPERADOR(A)"></option>
+                <option value="Espinha 01"></option>
+                <option value="Espinha 02"></option>
+                <option value="Espinha 03"></option>
+                <option value="Espinha 04"></option>
+                <option value="Espinha 05"></option>
+                <option value="Espinha 06"></option>
+                <option value="Espinha 07"></option>
+                <option value="Espinha 08"></option>
+              </datalist>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Nome de Usuário / E-mail <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="modal-user-name"
+                type="text"
+                required
+                placeholder="Ex: novo.colaborador@vieiracredsv ou Operador 11"
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Senha de Acesso <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="modal-user-pass"
+                type="text"
+                required
+                placeholder="Ex: SenhaForte@2026"
+                class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="modal-user-active"
+                checked
+                class="rounded-md text-blue-600 focus:ring-blue-500 dark:bg-slate-800"
+              />
+              <label for="modal-user-active" class="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                Usuário Ativo (✔)
+              </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                id="cancel-add-user-modal-btn"
+                type="button"
+                class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+              >
+                Salvar Usuário
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div
+      id="toast-container"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"
+    >
+      <div class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-800 dark:border-slate-200 text-xs font-semibold">
+        <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600 text-sm"></i>
+        <span id="toast-message">Mensagem de feedback</span>
+      </div>
+    </div>
+
+    <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
+    <div id="login-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+      <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-2xl relative overflow-hidden animate-fade-in">
+        
+        <!-- Glow deco -->
+        <div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-600/20 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/25 mx-auto mb-3">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="flex items-center justify-center gap-1.5 mb-1">
+            <span class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">VIEIRATECH</span>
+            <span class="text-xs px-1.5 py-0.5 rounded-md font-black bg-blue-600 text-white tracking-wide">HUB</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Acesso restrito para a equipe de TI e Infraestrutura
+          </p>
+        </div>
+
+        <!-- Error message banner -->
+        <div id="login-error-msg" class="hidden mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>
+          <span>Usuário ou senha incorretos.</span>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Usuário
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-user text-xs"></i>
+              </div>
+              <input
+                id="login-username"
+                type="text"
+                required
+                autocomplete="username"
+                placeholder="vieiratech"
+                class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-sans"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Senha de Acesso
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-lock text-xs"></i>
+              </div>
+              <input
+                id="login-password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full pl-9 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+              <button
+                id="toggle-pass-visibility"
+                type="button"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                title="Mostrar / ocultar senha"
+              >
+                <i class="fa-regular fa-eye text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-1">
+            <label class="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+              <input
+                id="login-remember"
+                type="checkbox"
+                checked
+                class="rounded-md text-blue-600 focus:ring-blue-500 dark:bg-slate-800"
+              />
+              <span>Manter conectado</span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+          >
+            <span>Entrar no HUB</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- LOGINS APP SCRIPT -->
+    <script type="module" src="/js/logins.js"></script>
+  </body>
+</html>
