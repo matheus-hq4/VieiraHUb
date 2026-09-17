@@ -13,7 +13,7 @@ class App {
     this.searchTerm = '';
     this.activeCategory = 'Favoritos';
     this.onlyPinned = false;
-    this.viewMode = 'grid'; // 'grid' | 'compact'
+    this.viewMode = localStorage.getItem('vieiratech_view_mode') || 'grid'; // 'grid' | 'compact'
     this.editingToolId = null;
 
     // Active primary tab
@@ -62,8 +62,8 @@ class App {
   }
 
   initModules() {
-    this.vault = new VaultManager((msg) => this.showToast(msg));
-    this.inventory = new InventoryManager((msg) => this.showToast(msg));
+    this.vault = new VaultManager((msg) => this.showToast(msg), this.viewMode);
+    this.inventory = new InventoryManager((msg) => this.showToast(msg), this.viewMode);
   }
 
   initTheme() {
@@ -223,8 +223,15 @@ class App {
     if (this.toggleViewBtn) {
       this.toggleViewBtn.addEventListener('click', () => {
         this.viewMode = this.viewMode === 'grid' ? 'compact' : 'grid';
+        localStorage.setItem('vieiratech_view_mode', this.viewMode);
         this.updateViewButtonState();
         this.render();
+        if (this.vault && typeof this.vault.setViewMode === 'function') {
+          this.vault.setViewMode(this.viewMode);
+        }
+        if (this.inventory && typeof this.inventory.setViewMode === 'function') {
+          this.inventory.setViewMode(this.viewMode);
+        }
       });
     }
 
@@ -1370,8 +1377,10 @@ class App {
 
     // Render active pane com sincronização em tempo real do servidor
     if (tabId === 'vault' && this.vault) {
+      this.vault.setViewMode(this.viewMode);
       this.vault.loadPasswords();
     } else if (tabId === 'inventory' && this.inventory) {
+      this.inventory.setViewMode(this.viewMode);
       this.inventory.loadItems();
     } else if (tabId === 'logins') {
       this.renderAdPane();

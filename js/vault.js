@@ -56,11 +56,12 @@ export class PasswordGenerator {
 }
 
 export class VaultManager {
-  constructor(showToastCallback) {
+  constructor(showToastCallback, initialViewMode = 'grid') {
     this.showToast = showToastCallback;
+    this.viewMode = initialViewMode;
     this.passwords = [];
     this.searchTerm = '';
-    this.activeCategory = 'Todos';
+    this.activeCategory = 'Favoritos';
     this.revealedSet = new Set();
     this.editingId = null;
 
@@ -69,12 +70,23 @@ export class VaultManager {
     this.loadPasswords();
   }
 
+  setViewMode(mode) {
+    this.viewMode = mode;
+    this.renderCards();
+  }
+
   async loadPasswords() {
     try {
       if (api.isAuthenticated()) {
         const data = await api.get('/api/vault');
         if (Array.isArray(data)) {
           this.passwords = data;
+          const pinnedCount = this.passwords.filter((p) => p.pinned).length;
+          if (pinnedCount > 0) {
+            this.activeCategory = 'Favoritos';
+          } else {
+            this.activeCategory = 'Todos';
+          }
           this.render();
           return;
         }
@@ -298,53 +310,108 @@ export class VaultManager {
     }
   }
 
+  async handleTogglePin(id) {
+    const item = this.passwords.find((p) => p.id === id);
+    if (!item) return;
+    const nextState = !item.pinned;
+    item.pinned = nextState;
+
+    this.showToast(
+      nextState
+        ? `⭐ Credencial "${item.title}" adicionada aos Favoritos!`
+        : `Credencial "${item.title}" removida dos Favoritos.`
+    );
+
+    try {
+      await api.put(`/api/vault/${id}`, { pinned: nextState });
+    } catch (e) {
+      console.error('[Vault] Erro ao salvar status nos favoritos:', e);
+    }
+    this.render();
+  }
+
   getFilteredList() {
     const q = this.searchTerm.toLowerCase().trim();
 
-    return this.passwords.filter((p) => {
-      if (this.activeCategory !== 'Todos' && p.category !== this.activeCategory) {
-        return false;
-      }
-      if (q) {
-        const matchTitle = p.title?.toLowerCase().includes(q);
-        const matchUser = p.username?.toLowerCase().includes(q);
-        const matchCat = p.category?.toLowerCase().includes(q);
-        const matchNotes = p.notes?.toLowerCase().includes(q);
-        return matchTitle || matchUser || matchCat || matchNotes;
-      }
-      return true;
-    });
+    return this.passwords
+      .filter((p) => {
+        if (this.activeCategory === 'Favoritos') {
+          if (!p.pinned) return false;
+        } else if (this.activeCategory !== 'Todos') {
+          if (p.category !== this.activeCategory) return false;
+        }
+        if (q) {
+          const matchTitle = p.title?.toLowerCase().includes(q);
+          const matchUser = p.username?.toLowerCase().includes(q);
+          const matchCat = p.category?.toLowerCase().includes(q);
+          const matchNotes = p.notes?.toLowerCase().includes(q);
+          return matchTitle || matchUser || matchCat || matchNotes;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return (a.title || '').localeCompare(b.title || '');
+      });
   }
 
   renderCategories() {
     if (!this.categoriesContainer) return;
-    const cats = ['Todos', 'Wi-Fi', 'Infra TI', 'Servidores', 'Contas / Web'];
+    const pinnedCount = this.passwords.filter((p) => p.pinned).length;
+    const counts = {
+      Favoritos: pinnedCount,
+      Todos: this.passwords.length
+    };
 
-    const counts = { Todos: this.passwords.length };
+    const set = new Set(['Wi-Fi', 'Infra TI', 'Servidores', 'Contas / Web']);
     this.passwords.forEach((p) => {
-      counts[p.category] = (counts[p.category] || 0) + 1;
+      if (p.category) {
+        set.add(p.category);
+        counts[p.category] = (counts[p.category] || 0) + 1;
+      }
     });
 
-    this.categoriesContainer.innerHTML = cats
+    const sortedCategories = Array.from(set).sort((a, b) => a.localeCompare(b));
+    const list = ['Favoritos', ...sortedCategories, 'Todos'];
+
+    this.categoriesContainer.innerHTML = list
       .map((cat) => {
         const isActive = this.activeCategory === cat;
         const count = counts[cat] || 0;
+        const isFavoritos = cat === 'Favoritos';
+        const isTodos = cat === 'Todos';
 
-        const activeClass = isActive
-          ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20'
-          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
+        let labelHtml = `<span>${cat}</span>`;
+        if (isFavoritos) {
+          labelHtml = `<i class="fa-solid fa-star ${isActive ? 'text-amber-300' : 'text-amber-400'} text-xs"></i><span>Favoritos</span>`;
+        } else if (isTodos) {
+          labelHtml = `<i class="fa-solid fa-list-check text-xs opacity-75"></i><span>Todos</span>`;
+        }
 
-        const badgeClass = isActive
-          ? 'bg-blue-700/60 text-white'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+        let activeClass = '';
+        let badgeClass = '';
+
+        if (isActive) {
+          if (isFavoritos) {
+            activeClass = 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-sm shadow-amber-500/25 ring-1 ring-amber-400/40';
+            badgeClass = 'bg-amber-700/60 text-white';
+          } else {
+            activeClass = 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20';
+            badgeClass = 'bg-blue-700/60 text-white';
+          }
+        } else {
+          activeClass = 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
+          badgeClass = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+        }
 
         return `
           <button
             type="button"
             data-cat="${cat}"
-            class="vault-cat-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
+            class="vault-cat-btn px-2.5 py-1 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
           >
-            <span>${cat}</span>
+            ${labelHtml}
             <span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold ${badgeClass}">${count}</span>
           </button>
         `;
@@ -369,164 +436,303 @@ export class VaultManager {
     if (this.filteredCounter) this.filteredCounter.textContent = list.length;
 
     if (list.length === 0) {
+      this.container.className = 'col-span-full';
       this.container.innerHTML = `
-        <div class="col-span-full py-16 text-center">
+        <div class="py-16 text-center">
           <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
             <i class="fa-solid fa-key text-2xl"></i>
           </div>
-          <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">Nenhuma credencial encontrada</h3>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
+            ${this.activeCategory === 'Favoritos' ? 'Nenhuma credencial nos Favoritos' : 'Nenhuma credencial encontrada'}
+          </h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            ${this.searchTerm ? 'Tente buscar com outro termo ou limpe os filtros.' : 'Cadastre sua primeira senha corporativa usando o botão acima.'}
+            ${
+              this.activeCategory === 'Favoritos'
+                ? 'Clique na estrela (⭐) em qualquer senha corporativa para colocá-la aqui nos seus Favoritos.'
+                : this.searchTerm
+                ? 'Tente buscar com outro termo ou limpe os filtros.'
+                : 'Cadastre sua primeira senha corporativa usando o botão acima.'
+            }
           </p>
         </div>
       `;
       return;
     }
 
-    this.container.innerHTML = list
-      .map((item) => {
-        const isRevealed = this.revealedSet.has(item.id);
-        const displayedPass = isRevealed ? item.password : '••••••••••••••••';
-
-        let categoryIcon = 'fa-solid fa-key';
-        let categoryColor = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-
-        if (item.category === 'Wi-Fi') {
-          categoryIcon = 'fa-solid fa-wifi';
-          categoryColor = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-        } else if (item.category === 'Infra TI') {
-          categoryIcon = 'fa-solid fa-network-wired';
-          categoryColor = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-        } else if (item.category === 'Servidores') {
-          categoryIcon = 'fa-solid fa-server';
-          categoryColor = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
-        }
-
-        return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
-            
-            <div>
-              <!-- Header do Cartão -->
-              <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-9 h-9 rounded-xl flex items-center justify-center border ${categoryColor}">
-                    <i class="${categoryIcon} text-sm"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">${item.title}</h4>
-                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${categoryColor}">${item.category}</span>
-                  </div>
-                </div>
-
-                <!-- Ações do Cartão (Editar / Excluir) -->
-                <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                  <button
-                    type="button"
-                    data-action="edit"
-                    data-id="${item.id}"
-                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
-                    title="Editar Credencial"
-                  >
-                    <i class="fa-solid fa-pen-to-square text-xs"></i>
-                  </button>
-                  ${isAdmin ? `
-                  <button
-                    type="button"
-                    data-action="delete"
-                    data-id="${item.id}"
-                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
-                    title="Excluir Credencial"
-                  >
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                  </button>
-                  ` : ''}
-                </div>
-              </div>
-
-              <!-- Usuário / Login (se houver) -->
-              ${
-                item.username
-                  ? `
-                <div class="mb-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                  <div class="flex items-center gap-2 overflow-hidden">
-                    <i class="fa-regular fa-user text-slate-400 text-xs shrink-0"></i>
-                    <span class="font-mono text-xs text-slate-700 dark:text-slate-300 truncate">${item.username}</span>
-                  </div>
-                  <button
-                    type="button"
-                    data-copy="${item.username}"
-                    data-label="Usuário"
-                    class="vault-copy-btn text-xs text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 px-1.5 py-0.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors shrink-0"
-                    title="Copiar Usuário"
-                  >
-                    <i class="fa-regular fa-copy"></i>
-                  </button>
-                </div>
-              `
-                  : ''
-              }
-
-              <!-- Senha Protegida -->
-              <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2 overflow-hidden">
-                  <i class="fa-solid fa-lock text-amber-500 text-xs shrink-0"></i>
-                  <span class="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate ${isRevealed ? '' : 'tracking-widest'}">
-                    ${displayedPass}
-                  </span>
-                </div>
-                
-                <div class="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    data-action="toggle-reveal"
-                    data-id="${item.id}"
-                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
-                    title="${isRevealed ? 'Ocultar Senha' : 'Ver Senha'}"
-                  >
-                    <i class="${isRevealed ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'} text-xs"></i>
-                  </button>
-                  <button
-                    type="button"
-                    data-copy="${item.password}"
-                    data-label="Senha"
-                    class="vault-copy-btn w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
-                    title="Copiar Senha"
-                  >
-                    <i class="fa-regular fa-copy text-xs"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Observações (se houver) -->
-              ${
-                item.notes
-                  ? `
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3 line-clamp-2">
-                  <i class="fa-regular fa-note-sticky mr-1 text-[10px] text-slate-400"></i>${item.notes}
-                </p>
-              `
-                  : ''
-              }
-            </div>
-
-            <!-- Rodapé do Cartão -->
-            <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Atualizado: ${item.updatedAt || 'Recente'}</span>
-              <span class="text-emerald-500 flex items-center gap-1 font-sans font-medium">
-                <i class="fa-solid fa-shield-halved text-[9px]"></i> Servidor
-              </span>
-            </div>
-
-          </div>
-        `;
-      })
-      .join('');
+    if (this.viewMode === 'compact') {
+      this.container.className = 'flex flex-col gap-2.5';
+      this.container.innerHTML = list.map((item) => this.createCompactCard(item, isAdmin)).join('');
+    } else {
+      this.container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+      this.container.innerHTML = list.map((item) => this.createGridCard(item, isAdmin)).join('');
+    }
 
     this.bindCardEvents();
   }
 
+  createGridCard(item, isAdmin) {
+    const isRevealed = this.revealedSet.has(item.id);
+    const displayedPass = isRevealed ? item.password : '••••••••••••••••';
+
+    let categoryIcon = 'fa-solid fa-key';
+    let categoryColor = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+
+    if (item.category === 'Wi-Fi') {
+      categoryIcon = 'fa-solid fa-wifi';
+      categoryColor = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+    } else if (item.category === 'Infra TI') {
+      categoryIcon = 'fa-solid fa-network-wired';
+      categoryColor = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+    } else if (item.category === 'Servidores') {
+      categoryIcon = 'fa-solid fa-server';
+      categoryColor = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+    }
+
+    return `
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+        <div>
+          <!-- Header do Cartão -->
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center border ${categoryColor} shrink-0">
+                <i class="${categoryIcon} text-sm"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug truncate">${item.title}</h4>
+                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${categoryColor}">${item.category}</span>
+              </div>
+            </div>
+
+            <!-- Ações do Cartão (Favorito / Editar / Excluir) -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                data-action="toggle-pin"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                  item.pinned
+                    ? 'text-amber-400 bg-amber-400/15 shadow-2xs'
+                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }"
+                title="${item.pinned ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}"
+              >
+                <i class="${item.pinned ? 'fa-solid fa-star text-amber-400 text-xs' : 'fa-regular fa-star text-xs'}"></i>
+              </button>
+              <button
+                type="button"
+                data-action="edit"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Editar Credencial"
+              >
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+              </button>
+              ${isAdmin ? `
+              <button
+                type="button"
+                data-action="delete"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Excluir Credencial"
+              >
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Usuário / Login (se houver) -->
+          ${
+            item.username
+              ? `
+            <div class="mb-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <div class="flex items-center gap-2 overflow-hidden">
+                <i class="fa-regular fa-user text-slate-400 text-xs shrink-0"></i>
+                <span class="font-mono text-xs text-slate-700 dark:text-slate-300 truncate">${item.username}</span>
+              </div>
+              <button
+                type="button"
+                data-copy="${item.username}"
+                data-label="Usuário"
+                class="vault-copy-btn text-xs text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 px-1.5 py-0.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                title="Copiar Usuário"
+              >
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+          `
+              : ''
+          }
+
+          <!-- Senha Protegida -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <i class="fa-solid fa-lock text-amber-500 text-xs shrink-0"></i>
+              <span class="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate ${isRevealed ? '' : 'tracking-widest'}">
+                ${displayedPass}
+              </span>
+            </div>
+            
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                data-action="toggle-reveal"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="${isRevealed ? 'Ocultar Senha' : 'Ver Senha'}"
+              >
+                <i class="${isRevealed ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'} text-xs"></i>
+              </button>
+              <button
+                type="button"
+                data-copy="${item.password}"
+                data-label="Senha"
+                class="vault-copy-btn w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Copiar Senha"
+              >
+                <i class="fa-regular fa-copy text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Observações (se houver) -->
+          ${
+            item.notes
+              ? `
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3 line-clamp-2">
+              <i class="fa-regular fa-note-sticky mr-1 text-[10px] text-slate-400"></i>${item.notes}
+            </p>
+          `
+              : ''
+          }
+        </div>
+
+        <!-- Rodapé do Cartão -->
+        <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <span>Atualizado: ${item.updatedAt || 'Recente'}</span>
+          <span class="text-emerald-500 flex items-center gap-1 font-sans font-medium">
+            <i class="fa-solid fa-shield-halved text-[9px]"></i> Servidor
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  createCompactCard(item, isAdmin) {
+    const isRevealed = this.revealedSet.has(item.id);
+    const displayedPass = isRevealed ? item.password : '••••••••••••••••';
+
+    let categoryIcon = 'fa-solid fa-key';
+    let categoryColor = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+
+    if (item.category === 'Wi-Fi') {
+      categoryIcon = 'fa-solid fa-wifi';
+      categoryColor = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+    } else if (item.category === 'Infra TI') {
+      categoryIcon = 'fa-solid fa-network-wired';
+      categoryColor = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+    } else if (item.category === 'Servidores') {
+      categoryIcon = 'fa-solid fa-server';
+      categoryColor = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+    }
+
+    return `
+      <div class="group bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200/80 dark:border-slate-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 shadow-xs hover:shadow-md transition-all flex items-center justify-between gap-3" data-id="${item.id}">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <button
+            type="button"
+            data-action="toggle-pin"
+            data-id="${item.id}"
+            class="vault-pin-btn text-xs ${item.pinned ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'} cursor-pointer shrink-0 transition-colors p-1"
+            title="${item.pinned ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}"
+          >
+            <i class="${item.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
+          </button>
+
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center border ${categoryColor} shrink-0">
+            <i class="${categoryIcon} text-sm"></i>
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">${item.title}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded font-medium border ${categoryColor}">${item.category}</span>
+            </div>
+            <div class="flex items-center gap-3 font-mono text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              ${item.username ? `<span class="truncate"><i class="fa-regular fa-user text-[10px] mr-1"></i>${item.username}</span>` : ''}
+              <span class="flex items-center gap-1 font-semibold truncate ${isRevealed ? 'text-slate-700 dark:text-slate-200' : 'tracking-widest'}">
+                <i class="fa-solid fa-lock text-[10px] text-amber-500"></i> ${displayedPass}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            data-action="toggle-reveal"
+            data-id="${item.id}"
+            class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
+            title="${isRevealed ? 'Ocultar Senha' : 'Ver Senha'}"
+          >
+            <i class="${isRevealed ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'}"></i>
+          </button>
+          <button
+            type="button"
+            data-copy="${item.password}"
+            data-label="Senha"
+            class="vault-copy-btn p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
+            title="Copiar Senha"
+          >
+            <i class="fa-regular fa-copy"></i>
+          </button>
+          ${item.username ? `
+          <button
+            type="button"
+            data-copy="${item.username}"
+            data-label="Usuário"
+            class="vault-copy-btn p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
+            title="Copiar Usuário"
+          >
+            <i class="fa-regular fa-user"></i>
+          </button>
+          ` : ''}
+          <button
+            type="button"
+            data-action="edit"
+            data-id="${item.id}"
+            class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
+            title="Editar"
+          >
+            <i class="fa-regular fa-pen-to-square"></i>
+          </button>
+          ${isAdmin ? `
+          <button
+            type="button"
+            data-action="delete"
+            data-id="${item.id}"
+            class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-xs transition-colors cursor-pointer"
+            title="Excluir"
+          >
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
   bindCardEvents() {
     if (!this.container) return;
+
+    // Alternar Favorito / Pin
+    this.container.querySelectorAll('button[data-action="toggle-pin"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (id) this.handleTogglePin(id);
+      });
+    });
 
     // Ações de Editar e Excluir
     this.container.querySelectorAll('button[data-action="edit"]').forEach((btn) => {

@@ -6,16 +6,22 @@
 import { api } from './api.js';
 
 export class InventoryManager {
-  constructor(showToastCallback) {
+  constructor(showToastCallback, initialViewMode = 'grid') {
     this.showToast = showToastCallback;
+    this.viewMode = initialViewMode;
     this.items = [];
     this.searchTerm = '';
-    this.activeCategory = 'Todos';
+    this.activeCategory = 'Favoritos';
     this.editingId = null;
 
     this.initDOMElements();
     this.bindEvents();
     this.loadItems();
+  }
+
+  setViewMode(mode) {
+    this.viewMode = mode;
+    this.renderCards();
   }
 
   async loadItems() {
@@ -24,6 +30,12 @@ export class InventoryManager {
         const data = await api.get('/api/inventory');
         if (Array.isArray(data)) {
           this.items = data;
+          const pinnedCount = this.items.filter((it) => it.pinned).length;
+          if (pinnedCount > 0) {
+            this.activeCategory = 'Favoritos';
+          } else {
+            this.activeCategory = 'Todos';
+          }
           this.render();
           return;
         }
@@ -181,53 +193,108 @@ export class InventoryManager {
     }
   }
 
+  async handleTogglePin(id) {
+    const item = this.items.find((it) => it.id === id);
+    if (!item) return;
+    const nextState = !item.pinned;
+    item.pinned = nextState;
+
+    this.showToast(
+      nextState
+        ? `⭐ Item "${item.name}" adicionado aos Favoritos!`
+        : `Item "${item.name}" removido dos Favoritos.`
+    );
+
+    try {
+      await api.put(`/api/inventory/${id}`, { pinned: nextState });
+    } catch (e) {
+      console.error('[Inventory] Erro ao salvar status nos favoritos:', e);
+    }
+    this.render();
+  }
+
   getFilteredList() {
     const q = this.searchTerm.toLowerCase().trim();
 
-    return this.items.filter((it) => {
-      if (this.activeCategory !== 'Todos' && it.category !== this.activeCategory) {
-        return false;
-      }
-      if (q) {
-        const matchName = it.name?.toLowerCase().includes(q);
-        const matchCat = it.category?.toLowerCase().includes(q);
-        const matchLoc = it.location?.toLowerCase().includes(q);
-        const matchNotes = it.notes?.toLowerCase().includes(q);
-        return matchName || matchCat || matchLoc || matchNotes;
-      }
-      return true;
-    });
+    return this.items
+      .filter((it) => {
+        if (this.activeCategory === 'Favoritos') {
+          if (!it.pinned) return false;
+        } else if (this.activeCategory !== 'Todos') {
+          if (it.category !== this.activeCategory) return false;
+        }
+        if (q) {
+          const matchName = it.name?.toLowerCase().includes(q);
+          const matchCat = it.category?.toLowerCase().includes(q);
+          const matchLoc = it.location?.toLowerCase().includes(q);
+          const matchNotes = it.notes?.toLowerCase().includes(q);
+          return matchName || matchCat || matchLoc || matchNotes;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
   }
 
   renderCategories() {
     if (!this.categoriesContainer) return;
-    const cats = ['Todos', 'Periféricos', 'Cabos', 'Hardware', 'Redes'];
+    const pinnedCount = this.items.filter((it) => it.pinned).length;
+    const counts = {
+      Favoritos: pinnedCount,
+      Todos: this.items.length
+    };
 
-    const counts = { Todos: this.items.length };
+    const set = new Set(['Cabos', 'Hardware', 'Periféricos', 'Redes']);
     this.items.forEach((it) => {
-      counts[it.category] = (counts[it.category] || 0) + 1;
+      if (it.category) {
+        set.add(it.category);
+        counts[it.category] = (counts[it.category] || 0) + 1;
+      }
     });
 
-    this.categoriesContainer.innerHTML = cats
+    const sortedCategories = Array.from(set).sort((a, b) => a.localeCompare(b));
+    const list = ['Favoritos', ...sortedCategories, 'Todos'];
+
+    this.categoriesContainer.innerHTML = list
       .map((cat) => {
         const isActive = this.activeCategory === cat;
         const count = counts[cat] || 0;
+        const isFavoritos = cat === 'Favoritos';
+        const isTodos = cat === 'Todos';
 
-        const activeClass = isActive
-          ? 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-500/20'
-          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
+        let labelHtml = `<span>${cat}</span>`;
+        if (isFavoritos) {
+          labelHtml = `<i class="fa-solid fa-star ${isActive ? 'text-amber-300' : 'text-amber-400'} text-xs"></i><span>Favoritos</span>`;
+        } else if (isTodos) {
+          labelHtml = `<i class="fa-solid fa-list-check text-xs opacity-75"></i><span>Todos</span>`;
+        }
 
-        const badgeClass = isActive
-          ? 'bg-emerald-700/60 text-white'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+        let activeClass = '';
+        let badgeClass = '';
+
+        if (isActive) {
+          if (isFavoritos) {
+            activeClass = 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-sm shadow-amber-500/25 ring-1 ring-amber-400/40';
+            badgeClass = 'bg-amber-700/60 text-white';
+          } else {
+            activeClass = 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-500/20';
+            badgeClass = 'bg-emerald-700/60 text-white';
+          }
+        } else {
+          activeClass = 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800';
+          badgeClass = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+        }
 
         return `
           <button
             type="button"
             data-cat="${cat}"
-            class="inv-cat-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
+            class="inv-cat-btn px-2.5 py-1 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
           >
-            <span>${cat}</span>
+            ${labelHtml}
             <span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold ${badgeClass}">${count}</span>
           </button>
         `;
@@ -253,166 +320,303 @@ export class InventoryManager {
     if (this.lowStockCounter) this.lowStockCounter.textContent = lowStockCount;
 
     if (list.length === 0) {
+      this.container.className = 'col-span-full';
       this.container.innerHTML = `
-        <div class="col-span-full py-16 text-center">
+        <div class="py-16 text-center">
           <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 mb-4">
             <i class="fa-solid fa-boxes-stacked text-2xl"></i>
           </div>
-          <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">Nenhum item encontrado no estoque</h3>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
+            ${this.activeCategory === 'Favoritos' ? 'Nenhum item nos Favoritos' : 'Nenhum item encontrado no estoque'}
+          </h3>
           <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            ${this.searchTerm ? 'Tente buscar com outro termo ou limpe os filtros.' : 'Cadastre seu primeiro equipamento ou periférico no botão acima.'}
+            ${
+              this.activeCategory === 'Favoritos'
+                ? 'Clique na estrela (⭐) em qualquer item para marcá-lo como favorito no seu estoque.'
+                : this.searchTerm
+                ? 'Tente buscar com outro termo ou limpe os filtros.'
+                : 'Cadastre seu primeiro equipamento ou periférico no botão acima.'
+            }
           </p>
         </div>
       `;
       return;
     }
 
-    this.container.innerHTML = list
-      .map((item) => {
-        const isLow = item.quantity <= item.minQuantity;
-
-        let icon = 'fa-solid fa-box';
-        let color = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-
-        if (item.category === 'Periféricos') {
-          icon = 'fa-solid fa-headphones';
-          color = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-        } else if (item.category === 'Cabos') {
-          icon = 'fa-solid fa-ethernet';
-          color = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-        } else if (item.category === 'Hardware') {
-          icon = 'fa-solid fa-microchip';
-          color = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
-        } else if (item.category === 'Redes') {
-          icon = 'fa-solid fa-network-wired';
-          color = 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
-        }
-
-        return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl border ${isLow ? 'border-amber-500/60 shadow-amber-500/5' : 'border-slate-200/80 dark:border-slate-800'} p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
-            
-            <div>
-              <!-- Header do Item -->
-              <div class="flex items-start justify-between gap-3 mb-3">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-9 h-9 rounded-xl flex items-center justify-center border ${color}">
-                    <i class="${icon} text-sm"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">${item.name}</h4>
-                    <div class="flex items-center gap-1.5 mt-0.5">
-                      <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${color}">${item.category}</span>
-                      ${
-                        isLow
-                          ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> Estoque Baixo</span>'
-                          : ''
-                      }
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Ações de Editar / Excluir -->
-                <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                  <button
-                    type="button"
-                    data-action="edit"
-                    data-id="${item.id}"
-                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
-                    title="Editar Item"
-                  >
-                    <i class="fa-solid fa-pen-to-square text-xs"></i>
-                  </button>
-                  ${isAdmin ? `
-                  <button
-                    type="button"
-                    data-action="delete"
-                    data-id="${item.id}"
-                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
-                    title="Excluir Item"
-                  >
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                  </button>
-                  ` : ''}
-                </div>
-              </div>
-
-              <!-- Quantidade & Controles Rápidos -->
-              <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between mb-3">
-                <div>
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Qtd Disponível</span>
-                  <div class="flex items-baseline gap-1.5">
-                    <span class="text-2xl font-black font-mono ${isLow ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}">
-                      ${item.quantity}
-                    </span>
-                    <span class="text-[11px] text-slate-400 font-mono">unid. (Mín: ${item.minQuantity})</span>
-                  </div>
-                </div>
-
-                <!-- Botões + e - para Entrada/Saída Rápida -->
-                <div class="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    data-action="qty-dec"
-                    data-id="${item.id}"
-                    class="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 flex items-center justify-center font-bold text-sm shadow-xs transition-colors"
-                    title="Dar baixa (-1)"
-                  >
-                    <i class="fa-solid fa-minus text-xs"></i>
-                  </button>
-                  <button
-                    type="button"
-                    data-action="qty-inc"
-                    data-id="${item.id}"
-                    class="w-8 h-8 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 flex items-center justify-center font-bold text-sm shadow-xs shadow-emerald-600/20 transition-colors"
-                    title="Adicionar (+1)"
-                  >
-                    <i class="fa-solid fa-plus text-xs"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Localização e Detalhes -->
-              <div class="space-y-1.5 mb-3 text-xs text-slate-600 dark:text-slate-400">
-                ${
-                  item.location
-                    ? `
-                  <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-location-dot text-slate-400 text-xs w-3.5 text-center"></i>
-                    <span class="truncate font-medium text-slate-700 dark:text-slate-300">${item.location}</span>
-                  </div>
-                `
-                    : ''
-                }
-                ${
-                  item.notes
-                    ? `
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mt-1">
-                    <i class="fa-regular fa-note-sticky mr-1 text-[10px] text-slate-400"></i>${item.notes}
-                  </p>
-                `
-                    : ''
-                }
-              </div>
-            </div>
-
-            <!-- Rodapé do Cartão -->
-            <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Status: <strong class="${item.status === 'Disponível' ? 'text-emerald-500' : 'text-slate-400'}">${item.status}</strong></span>
-              <span class="text-emerald-500 flex items-center gap-1 font-sans font-medium">
-                <i class="fa-solid fa-cloud-arrow-up text-[9px]"></i> Sincronizado
-              </span>
-            </div>
-
-          </div>
-        `;
-      })
-      .join('');
+    if (this.viewMode === 'compact') {
+      this.container.className = 'flex flex-col gap-2.5';
+      this.container.innerHTML = list.map((item) => this.createCompactCard(item, isAdmin)).join('');
+    } else {
+      this.container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+      this.container.innerHTML = list.map((item) => this.createGridCard(item, isAdmin)).join('');
+    }
 
     this.bindCardEvents();
   }
 
+  createGridCard(item, isAdmin) {
+    const isLow = item.quantity <= item.minQuantity;
+
+    let icon = 'fa-solid fa-box';
+    let color = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+
+    if (item.category === 'Periféricos') {
+      icon = 'fa-solid fa-headphones';
+      color = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+    } else if (item.category === 'Cabos') {
+      icon = 'fa-solid fa-ethernet';
+      color = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+    } else if (item.category === 'Hardware') {
+      icon = 'fa-solid fa-microchip';
+      color = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+    } else if (item.category === 'Redes') {
+      icon = 'fa-solid fa-network-wired';
+      color = 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
+    }
+
+    return `
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border ${isLow ? 'border-amber-500/60 shadow-amber-500/5' : 'border-slate-200/80 dark:border-slate-800'} p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+        <div>
+          <!-- Header do Item -->
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center border ${color} shrink-0">
+                <i class="${icon} text-sm"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug truncate">${item.name}</h4>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${color}">${item.category}</span>
+                  ${
+                    isLow
+                      ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i> Estoque Baixo</span>'
+                      : ''
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Ações de Favoritar / Editar / Excluir -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                data-action="toggle-pin"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                  item.pinned
+                    ? 'text-amber-400 bg-amber-400/15 shadow-2xs'
+                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }"
+                title="${item.pinned ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}"
+              >
+                <i class="${item.pinned ? 'fa-solid fa-star text-amber-400 text-xs' : 'fa-regular fa-star text-xs'}"></i>
+              </button>
+              <button
+                type="button"
+                data-action="edit"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Editar Item"
+              >
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+              </button>
+              ${isAdmin ? `
+              <button
+                type="button"
+                data-action="delete"
+                data-id="${item.id}"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Excluir Item"
+              >
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Quantidade & Controles Rápidos -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between mb-3">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Qtd Disponível</span>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black font-mono ${isLow ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}">
+                  ${item.quantity}
+                </span>
+                <span class="text-[11px] text-slate-400 font-mono">unid. (Mín: ${item.minQuantity})</span>
+              </div>
+            </div>
+
+            <!-- Botões + e - para Entrada/Saída Rápida -->
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                data-action="qty-dec"
+                data-id="${item.id}"
+                class="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 flex items-center justify-center font-bold text-sm shadow-xs transition-colors cursor-pointer"
+                title="Dar baixa (-1)"
+              >
+                <i class="fa-solid fa-minus text-xs"></i>
+              </button>
+              <button
+                type="button"
+                data-action="qty-inc"
+                data-id="${item.id}"
+                class="w-8 h-8 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 flex items-center justify-center font-bold text-sm shadow-xs shadow-emerald-600/20 transition-colors cursor-pointer"
+                title="Adicionar (+1)"
+              >
+                <i class="fa-solid fa-plus text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Localização e Detalhes -->
+          <div class="space-y-1.5 mb-3 text-xs text-slate-600 dark:text-slate-400">
+            ${
+              item.location
+                ? `
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-location-dot text-slate-400 text-xs w-3.5 text-center"></i>
+                <span class="truncate font-medium text-slate-700 dark:text-slate-300">${item.location}</span>
+              </div>
+            `
+                : ''
+            }
+            ${
+              item.notes
+                ? `
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mt-1">
+                <i class="fa-regular fa-note-sticky mr-1 text-[10px] text-slate-400"></i>${item.notes}
+              </p>
+            `
+                : ''
+            }
+          </div>
+        </div>
+
+        <!-- Rodapé do Cartão -->
+        <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <span>Status: <strong class="${item.status === 'Disponível' ? 'text-emerald-500' : 'text-slate-400'}">${item.status}</strong></span>
+          <span class="text-emerald-500 flex items-center gap-1 font-sans font-medium">
+            <i class="fa-solid fa-cloud-arrow-up text-[9px]"></i> Sincronizado
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  createCompactCard(item, isAdmin) {
+    const isLow = item.quantity <= item.minQuantity;
+
+    let icon = 'fa-solid fa-box';
+    let color = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+
+    if (item.category === 'Periféricos') {
+      icon = 'fa-solid fa-headphones';
+      color = 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+    } else if (item.category === 'Cabos') {
+      icon = 'fa-solid fa-ethernet';
+      color = 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+    } else if (item.category === 'Hardware') {
+      icon = 'fa-solid fa-microchip';
+      color = 'text-purple-500 bg-purple-500/10 border-purple-500/20';
+    } else if (item.category === 'Redes') {
+      icon = 'fa-solid fa-network-wired';
+      color = 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20';
+    }
+
+    return `
+      <div class="group bg-white dark:bg-slate-900 rounded-xl p-3 border ${isLow ? 'border-amber-500/60' : 'border-slate-200/80 dark:border-slate-800'} hover:border-emerald-500/50 dark:hover:border-emerald-500/50 shadow-xs hover:shadow-md transition-all flex items-center justify-between gap-3" data-id="${item.id}">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <button
+            type="button"
+            data-action="toggle-pin"
+            data-id="${item.id}"
+            class="inv-pin-btn text-xs ${item.pinned ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'} cursor-pointer shrink-0 transition-colors p-1"
+            title="${item.pinned ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}"
+          >
+            <i class="${item.pinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
+          </button>
+
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center border ${color} shrink-0">
+            <i class="${icon} text-sm"></i>
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">${item.name}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded font-medium border ${color}">${item.category}</span>
+              ${isLow ? '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">Estoque Baixo</span>' : ''}
+            </div>
+            <div class="flex items-center gap-3 font-mono text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              <span><i class="fa-solid fa-location-dot text-[10px] mr-1 text-slate-400"></i>${item.location || 'Sem local'}</span>
+              <span>• Status: <strong class="${item.status === 'Disponível' ? 'text-emerald-500' : 'text-slate-400'}">${item.status || 'Disponível'}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950/60 p-1 rounded-lg border border-slate-200/60 dark:border-slate-800">
+            <button
+              type="button"
+              data-action="qty-dec"
+              data-id="${item.id}"
+              class="w-6 h-6 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-rose-600 text-xs flex items-center justify-center cursor-pointer border border-slate-200/60 dark:border-slate-800"
+              title="Dar baixa (-1)"
+            >
+              <i class="fa-solid fa-minus text-[10px]"></i>
+            </button>
+            <span class="font-mono font-bold text-xs px-2 ${isLow ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'} min-w-[28px] text-center">
+              ${item.quantity}
+            </span>
+            <button
+              type="button"
+              data-action="qty-inc"
+              data-id="${item.id}"
+              class="w-6 h-6 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-emerald-600 text-xs flex items-center justify-center cursor-pointer border border-slate-200/60 dark:border-slate-800"
+              title="Dar entrada (+1)"
+            >
+              <i class="fa-solid fa-plus text-[10px]"></i>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              data-action="edit"
+              data-id="${item.id}"
+              class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs transition-colors cursor-pointer"
+              title="Editar"
+            >
+              <i class="fa-regular fa-pen-to-square"></i>
+            </button>
+            ${isAdmin ? `
+            <button
+              type="button"
+              data-action="delete"
+              data-id="${item.id}"
+              class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-xs transition-colors cursor-pointer"
+              title="Excluir"
+            >
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   bindCardEvents() {
     if (!this.container) return;
+
+    // Alternar Favorito / Pin
+    this.container.querySelectorAll('button[data-action="toggle-pin"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (id) this.handleTogglePin(id);
+      });
+    });
 
     // Editar e Excluir
     this.container.querySelectorAll('button[data-action="edit"]').forEach((btn) => {
