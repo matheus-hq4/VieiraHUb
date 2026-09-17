@@ -467,22 +467,22 @@ class App {
 
         return `
           <div
-            class="hero-tool-card group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
+            class="hero-tool-card group bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-3.5 transition-all cursor-pointer shadow-xs flex flex-col justify-between"
             data-id="${tool.id}"
             data-url="${launchUrl}"
             title="Acessar ${tool.name} (${tool.url_or_ip})"
           >
             <div>
               <div class="flex items-start justify-between gap-2 mb-2">
-                <div class="w-8 h-8 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 flex items-center justify-center text-sm group-hover:scale-105 transition-transform shrink-0">
+                <div class="w-8 h-8 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center text-sm group-hover:scale-105 transition-transform shrink-0">
                   <i class="${tool.icon || 'fa-solid fa-server'}"></i>
                 </div>
-                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-slate-800 text-orange-300 border border-slate-700/80">
+                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-slate-800 text-blue-300 border border-slate-700/80">
                   #${index + 1}
                 </span>
               </div>
 
-              <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-orange-300 transition-colors truncate">
+              <h4 class="font-bold text-xs sm:text-sm text-white group-hover:text-blue-400 transition-colors truncate">
                 ${tool.name}
               </h4>
 
@@ -492,11 +492,11 @@ class App {
             </div>
 
             <div class="pt-2.5 mt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-              <span class="text-orange-300/90 text-[10px] font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-fire text-[10px] text-orange-400"></i>
+              <span class="text-slate-400 text-[10px] font-medium flex items-center gap-1">
+                <i class="fa-solid fa-arrow-trend-up text-[10px] text-blue-400"></i>
                 <span>${count} acessos</span>
               </span>
-              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-orange-600/80 group-hover:bg-orange-500 px-2 py-0.5 rounded-md transition-colors shadow-xs">
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-blue-600 group-hover:bg-blue-500 px-2 py-0.5 rounded-md transition-colors shadow-xs">
                 <span>Acessar</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
               </span>
