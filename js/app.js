@@ -98,6 +98,7 @@ class App {
     this.filteredToolsCounter = document.getElementById('filtered-tools-count');
     this.pinnedCounter = document.getElementById('pinned-tools-count');
     this.heroTotalCounter = document.getElementById('hero-total-count');
+    this.heroTopToolsContainer = document.getElementById('hero-top-tools-container');
 
     // Filter controls
     this.categoriesContainer = document.getElementById('categories-container');
@@ -623,8 +624,9 @@ class App {
               href="${launchUrl}"
               target="_blank"
               rel="noopener noreferrer"
-              class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+              class="launch-tool-btn px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
               title="Acessar endereço da ferramenta"
+              data-id="${tool.id}"
             >
               <span>Acessar</span>
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
@@ -721,7 +723,8 @@ class App {
             href="${launchUrl}"
             target="_blank"
             rel="noopener noreferrer"
-            class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+            class="launch-tool-btn px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+            data-id="${tool.id}"
           >
             <span>Acessar</span>
             <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
@@ -732,6 +735,14 @@ class App {
   }
 
   bindCardEvents() {
+    // Launch click tracking
+    this.toolsContainer.querySelectorAll('.launch-tool-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        if (id) this.recordToolAccess(id);
+      });
+    });
+
     // Copy IP
     this.toolsContainer.querySelectorAll('.copy-ip-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -1564,8 +1575,121 @@ class App {
     if (this.heroTotalCounter) this.heroTotalCounter.textContent = this.tools.length;
   }
 
+  getTopUsedTools(limit = 3) {
+    return [...this.tools]
+      .sort((a, b) => {
+        const countA = a.accessCount || 0;
+        const countB = b.accessCount || 0;
+        if (countB !== countA) return countB - countA;
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      })
+      .slice(0, limit);
+  }
+
+  renderHeroTopTools() {
+    if (!this.heroTopToolsContainer) return;
+    const topTools = this.getTopUsedTools(3);
+
+    if (topTools.length === 0) {
+      this.heroTopToolsContainer.innerHTML = `
+        <div class="py-4 text-center text-xs text-slate-400">
+          Nenhuma ferramenta disponível no momento.
+        </div>
+      `;
+      return;
+    }
+
+    const rankBadges = [
+      'bg-gradient-to-tr from-amber-400 to-amber-300 text-slate-950 ring-1 ring-amber-400/60 shadow-xs shadow-amber-500/20',
+      'bg-gradient-to-tr from-slate-200 to-slate-100 text-slate-900 ring-1 ring-slate-300/60 shadow-xs',
+      'bg-gradient-to-tr from-amber-700 to-amber-600 text-amber-100 ring-1 ring-amber-600/60 shadow-xs'
+    ];
+
+    this.heroTopToolsContainer.innerHTML = topTools
+      .map((tool, index) => {
+        const launchUrl = this.formatLaunchUrl(tool.url_or_ip);
+        const count = tool.accessCount || 0;
+        const rankClass = rankBadges[index] || 'bg-slate-700 text-slate-200';
+
+        return `
+          <div
+            class="hero-top-tool-card group bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-amber-400/60 rounded-xl p-2.5 flex items-center justify-between gap-2.5 transition-all cursor-pointer shadow-xs"
+            data-id="${tool.id}"
+            data-url="${launchUrl}"
+            title="Acessar ${tool.name} (${count} acessos acumulados)"
+          >
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="w-5 h-5 rounded-md ${rankClass} flex items-center justify-center font-black text-[10px] shrink-0">
+                ${index + 1}
+              </div>
+
+              <div class="w-7 h-7 rounded-lg bg-slate-700/70 border border-slate-600/60 flex items-center justify-center text-blue-400 text-xs shrink-0 group-hover:scale-105 transition-transform">
+                <i class="${tool.icon || 'fa-solid fa-server'}"></i>
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-xs text-white truncate group-hover:text-amber-300 transition-colors">
+                  ${tool.name}
+                </p>
+                <div class="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <span class="truncate max-w-[90px]">${tool.category}</span>
+                  <span>&bull;</span>
+                  <span class="text-amber-400 font-mono font-semibold">${count} ${count === 1 ? 'acesso' : 'acessos'}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="hero-top-launch-btn px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold shrink-0 flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+              data-id="${tool.id}"
+              data-url="${launchUrl}"
+            >
+              <span>Abrir</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+            </button>
+          </div>
+        `;
+      })
+      .join('');
+
+    // Click events on top 3 cards to launch and track
+    this.heroTopToolsContainer.querySelectorAll('.hero-top-tool-card').forEach((card) => {
+      card.addEventListener('click', (e) => {
+        const id = card.getAttribute('data-id');
+        const url = card.getAttribute('data-url');
+        if (id) this.recordToolAccess(id);
+        if (url && url !== '#') {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      });
+    });
+  }
+
+  async recordToolAccess(id) {
+    const tool = this.tools.find((t) => t.id === id);
+    if (!tool) return;
+
+    // Incrementa contagem localmente
+    tool.accessCount = (tool.accessCount || 0) + 1;
+    tool.lastAccessedAt = new Date().toISOString();
+
+    // Re-renderiza o Top 3 do banner instantaneamente
+    this.renderHeroTopTools();
+
+    // Sincroniza em background com a API do servidor
+    try {
+      await api.post(`/api/tools/${encodeURIComponent(id)}/access`, {});
+    } catch (e) {
+      console.warn('[App] Erro ao registrar acesso individual via API:', e);
+    }
+  }
+
   render() {
     this.renderCounters();
+    this.renderHeroTopTools();
     this.renderCategories();
     this.renderTools();
   }

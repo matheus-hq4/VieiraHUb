@@ -191,6 +191,19 @@ app.put('/api/tools/:id', requireAuth, (req, res) => {
   return res.json(updated);
 });
 
+// Registrar acesso / clique na ferramenta (incrementa accessCount em tempo real)
+app.post('/api/tools/:id/access', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const tool = db.findById('tools', id);
+  if (!tool) return res.status(404).json({ error: 'Ferramenta não encontrada.' });
+
+  const accessCount = (tool.accessCount || 0) + 1;
+  const lastAccessedAt = new Date().toISOString();
+  const updated = db.update('tools', id, { accessCount, lastAccessedAt });
+
+  return res.json({ id: updated.id, accessCount: updated.accessCount, lastAccessedAt });
+});
+
 // Excluir ferramenta (apenas Administrador)
 app.delete('/api/tools/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
