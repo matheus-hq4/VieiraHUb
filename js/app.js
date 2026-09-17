@@ -37,12 +37,12 @@ class App {
     try {
       this.tools = await loadTools();
       this.adRawText = await this.loadAdLogins();
-      // Se houver ferramentas favoritadas com estrela, inicia em Favoritos; senão inicia em Mais Acessados
+      // Se houver ferramentas favoritadas com estrela, inicia em Favoritos; senão inicia em Todos
       const pinnedCount = this.tools.filter((t) => t.pinned).length;
       if (pinnedCount > 0) {
         this.activeCategory = 'Favoritos';
       } else {
-        this.activeCategory = 'Mais Acessados';
+        this.activeCategory = 'Todos';
       }
       this.render();
       this.renderAdPane();
@@ -379,9 +379,7 @@ class App {
       // Category filter: Favoritos, Mais Acessados, Todos, or specific category
       if (this.activeCategory === 'Favoritos') {
         if (!tool.pinned) return false;
-      } else if (this.activeCategory === 'Mais Acessados' || this.activeCategory === 'Todos') {
-        // Exibe todas as ferramentas
-      } else {
+      } else if (this.activeCategory !== 'Todos') {
         if (tool.category !== this.activeCategory) return false;
       }
 
@@ -405,18 +403,6 @@ class App {
       return true;
     });
 
-    // Se estiver em Mais Acessados, ordena por acessos acumulados (mais usados no topo!)
-    if (this.activeCategory === 'Mais Acessados') {
-      return filtered.sort((a, b) => {
-        const countA = a.accessCount || 0;
-        const countB = b.accessCount || 0;
-        if (countB !== countA) return countB - countA;
-        if (a.pinned && !b.pinned) return -1;
-        if (!a.pinned && b.pinned) return 1;
-        return (a.name || '').localeCompare(b.name || '');
-      });
-    }
-
     return filtered.sort((a, b) => {
       // Pinned first
       if (a.pinned && !b.pinned) return -1;
@@ -426,12 +412,11 @@ class App {
   }
 
   // Get dynamic categories list with counts
-  // Structure: ['Favoritos', 'Mais Acessados', ...sortedCategories, 'Todos']
+  // Structure: ['Favoritos', ...sortedCategories, 'Todos']
   getCategoriesData() {
     const pinnedCount = this.tools.filter((t) => t.pinned).length;
     const counts = {
       Favoritos: pinnedCount,
-      'Mais Acessados': this.tools.length,
       Todos: this.tools.length
     };
     const set = new Set(['Infraestrutura', 'Servidores', 'Automação', 'Suporte']);
@@ -446,7 +431,7 @@ class App {
     const sortedCategories = Array.from(set).sort((a, b) => a.localeCompare(b));
 
     return {
-      list: ['Favoritos', 'Mais Acessados', ...sortedCategories, 'Todos'],
+      list: ['Favoritos', ...sortedCategories, 'Todos'],
       counts
     };
   }
@@ -545,14 +530,11 @@ class App {
         const isActive = this.activeCategory === cat;
         const count = counts[cat] || 0;
         const isFavoritos = cat === 'Favoritos';
-        const isMaisAcessados = cat === 'Mais Acessados';
         const isTodos = cat === 'Todos';
 
         let labelHtml = `<span>${cat}</span>`;
         if (isFavoritos) {
           labelHtml = `<i class="fa-solid fa-star ${isActive ? 'text-amber-300' : 'text-amber-400'} text-xs"></i><span>Favoritos</span>`;
-        } else if (isMaisAcessados) {
-          labelHtml = `<i class="fa-solid fa-fire ${isActive ? 'text-orange-300' : 'text-orange-400'} text-xs"></i><span>Mais Acessados</span>`;
         } else if (isTodos) {
           labelHtml = `<i class="fa-solid fa-list-check text-xs opacity-75"></i><span>Todos</span>`;
         }
@@ -564,9 +546,6 @@ class App {
           if (isFavoritos) {
             activeClass = 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-sm shadow-amber-500/25 ring-1 ring-amber-400/40';
             badgeClass = 'bg-amber-700/60 text-white';
-          } else if (isMaisAcessados) {
-            activeClass = 'bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-sm shadow-orange-500/25 ring-1 ring-orange-400/40';
-            badgeClass = 'bg-orange-700/60 text-white';
           } else {
             activeClass = 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20';
             badgeClass = 'bg-blue-700/60 text-white';
@@ -608,7 +587,6 @@ class App {
       if (this.emptyState) {
         this.emptyState.classList.remove('hidden');
         const isFavoritos = this.activeCategory === 'Favoritos';
-        const isMaisAcessados = this.activeCategory === 'Mais Acessados';
         const titleEl = this.emptyState.querySelector('h3');
         const descEl = this.emptyState.querySelector('p');
         const iconEl = this.emptyState.querySelector('.rounded-2xl i');
@@ -618,11 +596,6 @@ class App {
           if (iconEl) iconEl.className = 'fa-solid fa-star text-amber-400';
           if (titleEl) titleEl.textContent = 'Nenhum app marcado nos Favoritos';
           if (descEl) descEl.textContent = 'Clique na estrela (⭐) em qualquer ferramenta para marcá-la como favorita e fixar seu acesso!';
-          if (btnEl) btnEl.textContent = 'Ver Todos os Apps';
-        } else if (isMaisAcessados && !this.searchTerm) {
-          if (iconEl) iconEl.className = 'fa-solid fa-fire text-orange-400';
-          if (titleEl) titleEl.textContent = 'Nenhum app disponível';
-          if (descEl) descEl.textContent = 'Cadastre ferramentas ou utilize o portal para registrar acessos automáticos.';
           if (btnEl) btnEl.textContent = 'Ver Todos os Apps';
         } else {
           if (iconEl) iconEl.className = 'fa-solid fa-magnifying-glass text-blue-500';
