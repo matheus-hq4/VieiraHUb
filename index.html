@@ -283,36 +283,36 @@
         </div>
 
         <!-- Filter & Search Bar -->
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 pb-2">
-          <!-- Categories Pills Container -->
-          <div id="categories-container" class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none flex-wrap sm:flex-nowrap">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <!-- Categories Pills Container (fits all tabs without horizontal scroll) -->
+          <div id="categories-container" class="flex items-center gap-1.5 flex-wrap">
             <!-- Injected via JavaScript -->
           </div>
 
           <!-- Right Side: Search Input & Tools Counter -->
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <!-- Search Input -->
-            <div class="relative w-full sm:w-72 lg:w-80">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div class="flex items-center gap-2.5 shrink-0 self-start md:self-auto w-full md:w-auto">
+            <!-- Search Input (compact) -->
+            <div class="relative flex-1 md:w-52 lg:w-56">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <i class="fa-solid fa-magnifying-glass text-xs"></i>
               </div>
               <input
                 id="search-input"
                 type="text"
-                placeholder="Buscar por nome, IP, porta... (Ctrl+K)"
-                class="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
+                placeholder="Buscar app, IP... (Ctrl+K)"
+                class="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 shadow-2xs transition-all font-sans"
               />
               <button
                 id="search-clear-btn"
                 type="button"
-                class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <i class="fa-solid fa-xmark text-xs"></i>
               </button>
             </div>
 
             <!-- Showing Counter Info -->
-            <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap self-end sm:self-auto">
+            <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
               <span>
                 Exibindo <strong id="filtered-tools-count" class="text-blue-600 dark:text-blue-400 font-bold">0</strong> de <strong id="total-tools-count" class="text-slate-800 dark:text-slate-200">0</strong>
               </span>

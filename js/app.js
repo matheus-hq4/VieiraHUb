@@ -429,7 +429,7 @@ class App {
           <button
             type="button"
             data-category="${cat}"
-            class="category-btn px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
+            class="category-btn px-2.5 py-1 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${activeClass}"
           >
             ${labelHtml}
             <span class="text-[10px] px-1.5 py-0.5 rounded-md font-mono ${badgeClass}">${count}</span>
