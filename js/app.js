@@ -11,7 +11,7 @@ class App {
     this.tools = [];
     this.isDarkMode = loadTheme();
     this.searchTerm = '';
-    this.activeCategory = 'Mais Acessados';
+    this.activeCategory = 'Favoritos';
     this.onlyPinned = false;
     this.viewMode = 'grid'; // 'grid' | 'compact'
     this.editingToolId = null;
@@ -37,12 +37,12 @@ class App {
     try {
       this.tools = await loadTools();
       this.adRawText = await this.loadAdLogins();
-      // Se houver ferramentas fixadas/mais acessadas, inicia nela; caso contrário inicia em Todos
+      // Se houver ferramentas favoritadas com estrela, inicia em Favoritos; senão inicia em Mais Acessados
       const pinnedCount = this.tools.filter((t) => t.pinned).length;
       if (pinnedCount > 0) {
-        this.activeCategory = 'Mais Acessados';
+        this.activeCategory = 'Favoritos';
       } else {
-        this.activeCategory = 'Todos';
+        this.activeCategory = 'Mais Acessados';
       }
       this.render();
       this.renderAdPane();
@@ -102,6 +102,7 @@ class App {
     // Hero KPI Cards
     this.heroCardTotal = document.getElementById('hero-card-total');
     this.heroCardPinned = document.getElementById('hero-card-pinned');
+    this.heroCardMostUsed = document.getElementById('hero-card-most-used');
     this.heroCardCategories = document.getElementById('hero-card-categories');
     this.heroCardSearch = document.getElementById('hero-card-search');
 
@@ -245,6 +246,12 @@ class App {
     }
     if (this.heroCardPinned) {
       this.heroCardPinned.addEventListener('click', () => {
+        this.activeCategory = 'Favoritos';
+        this.render();
+      });
+    }
+    if (this.heroCardMostUsed) {
+      this.heroCardMostUsed.addEventListener('click', () => {
         this.activeCategory = 'Mais Acessados';
         this.render();
       });
@@ -365,48 +372,63 @@ class App {
   getFilteredTools() {
     const query = this.searchTerm.toLowerCase().trim();
 
-    return this.tools
-      .filter((tool) => {
-        // Category filter: Mais Acessados, Todos, or specific category
-        if (this.activeCategory === 'Mais Acessados') {
-          if (!tool.pinned) return false;
-        } else if (this.activeCategory !== 'Todos') {
-          if (tool.category !== this.activeCategory) return false;
-        }
+    const filtered = this.tools.filter((tool) => {
+      // Category filter: Favoritos, Mais Acessados, Todos, or specific category
+      if (this.activeCategory === 'Favoritos') {
+        if (!tool.pinned) return false;
+      } else if (this.activeCategory === 'Mais Acessados' || this.activeCategory === 'Todos') {
+        // Exibe todas as ferramentas
+      } else {
+        if (tool.category !== this.activeCategory) return false;
+      }
 
-        // Explicit Pinned filter toggle if active
-        if (this.onlyPinned && !tool.pinned) {
-          return false;
-        }
+      // Explicit Pinned filter toggle if active
+      if (this.onlyPinned && !tool.pinned) {
+        return false;
+      }
 
-        // Search text
-        if (query) {
-          const matchName = tool.name?.toLowerCase().includes(query);
-          const matchUrl = tool.url_or_ip?.toLowerCase().includes(query);
-          const matchCat = tool.category?.toLowerCase().includes(query);
-          const matchDesc = tool.description?.toLowerCase().includes(query);
-          const matchPort = tool.port?.toString().includes(query);
-          const matchProto = tool.protocol?.toLowerCase().includes(query);
+      // Search text
+      if (query) {
+        const matchName = tool.name?.toLowerCase().includes(query);
+        const matchUrl = tool.url_or_ip?.toLowerCase().includes(query);
+        const matchCat = tool.category?.toLowerCase().includes(query);
+        const matchDesc = tool.description?.toLowerCase().includes(query);
+        const matchPort = tool.port?.toString().includes(query);
+        const matchProto = tool.protocol?.toLowerCase().includes(query);
 
-          return matchName || matchUrl || matchCat || matchDesc || matchPort || matchProto;
-        }
+        return matchName || matchUrl || matchCat || matchDesc || matchPort || matchProto;
+      }
 
-        return true;
-      })
-      .sort((a, b) => {
-        // Pinned first
+      return true;
+    });
+
+    // Se estiver em Mais Acessados, ordena por acessos acumulados (mais usados no topo!)
+    if (this.activeCategory === 'Mais Acessados') {
+      return filtered.sort((a, b) => {
+        const countA = a.accessCount || 0;
+        const countB = b.accessCount || 0;
+        if (countB !== countA) return countB - countA;
         if (a.pinned && !b.pinned) return -1;
         if (!a.pinned && b.pinned) return 1;
         return (a.name || '').localeCompare(b.name || '');
       });
+    }
+
+    return filtered.sort((a, b) => {
+      // Pinned first
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   }
 
   // Get dynamic categories list with counts
-  // Structure: ['Mais Acessados', ...sortedCategories, 'Todos']
+  // Structure: ['Favoritos', 'Mais Acessados', ...sortedCategories, 'Todos']
   getCategoriesData() {
     const pinnedCount = this.tools.filter((t) => t.pinned).length;
     const counts = {
-      'Mais Acessados': pinnedCount,
+      Favoritos: pinnedCount,
+      'Mais Acessados': this.tools.length,
       Todos: this.tools.length
     };
     const set = new Set(['Infraestrutura', 'Servidores', 'Automação', 'Suporte']);
@@ -421,7 +443,7 @@ class App {
     const sortedCategories = Array.from(set).sort((a, b) => a.localeCompare(b));
 
     return {
-      list: ['Mais Acessados', ...sortedCategories, 'Todos'],
+      list: ['Favoritos', 'Mais Acessados', ...sortedCategories, 'Todos'],
       counts
     };
   }
@@ -434,23 +456,29 @@ class App {
       .map((cat) => {
         const isActive = this.activeCategory === cat;
         const count = counts[cat] || 0;
+        const isFavoritos = cat === 'Favoritos';
         const isMaisAcessados = cat === 'Mais Acessados';
         const isTodos = cat === 'Todos';
 
         let labelHtml = `<span>${cat}</span>`;
-        if (isMaisAcessados) {
-          labelHtml = `<i class="fa-solid fa-star ${isActive ? 'text-amber-300' : 'text-amber-400'} text-xs"></i><span>${cat}</span>`;
+        if (isFavoritos) {
+          labelHtml = `<i class="fa-solid fa-star ${isActive ? 'text-amber-300' : 'text-amber-400'} text-xs"></i><span>Favoritos</span>`;
+        } else if (isMaisAcessados) {
+          labelHtml = `<i class="fa-solid fa-fire ${isActive ? 'text-orange-300' : 'text-orange-400'} text-xs"></i><span>Mais Acessados</span>`;
         } else if (isTodos) {
-          labelHtml = `<i class="fa-solid fa-list-check text-xs opacity-75"></i><span>${cat}</span>`;
+          labelHtml = `<i class="fa-solid fa-list-check text-xs opacity-75"></i><span>Todos</span>`;
         }
 
         let activeClass = '';
         let badgeClass = '';
 
         if (isActive) {
-          if (isMaisAcessados) {
+          if (isFavoritos) {
             activeClass = 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-sm shadow-amber-500/25 ring-1 ring-amber-400/40';
             badgeClass = 'bg-amber-700/60 text-white';
+          } else if (isMaisAcessados) {
+            activeClass = 'bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-sm shadow-orange-500/25 ring-1 ring-orange-400/40';
+            badgeClass = 'bg-orange-700/60 text-white';
           } else {
             activeClass = 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20';
             badgeClass = 'bg-blue-700/60 text-white';
@@ -491,16 +519,22 @@ class App {
       this.toolsContainer.className = 'hidden';
       if (this.emptyState) {
         this.emptyState.classList.remove('hidden');
+        const isFavoritos = this.activeCategory === 'Favoritos';
         const isMaisAcessados = this.activeCategory === 'Mais Acessados';
         const titleEl = this.emptyState.querySelector('h3');
         const descEl = this.emptyState.querySelector('p');
         const iconEl = this.emptyState.querySelector('.rounded-2xl i');
         const btnEl = this.emptyStateClearBtn;
 
-        if (isMaisAcessados && !this.searchTerm) {
+        if (isFavoritos && !this.searchTerm) {
           if (iconEl) iconEl.className = 'fa-solid fa-star text-amber-400';
-          if (titleEl) titleEl.textContent = 'Nenhum app nos Mais Acessados';
-          if (descEl) descEl.textContent = 'Clique na estrela (⭐) em qualquer ferramenta para colocá-la aqui no seu Acesso Rápido de prioridade!';
+          if (titleEl) titleEl.textContent = 'Nenhum app marcado nos Favoritos';
+          if (descEl) descEl.textContent = 'Clique na estrela (⭐) em qualquer ferramenta para marcá-la como favorita e fixar seu acesso!';
+          if (btnEl) btnEl.textContent = 'Ver Todos os Apps';
+        } else if (isMaisAcessados && !this.searchTerm) {
+          if (iconEl) iconEl.className = 'fa-solid fa-fire text-orange-400';
+          if (titleEl) titleEl.textContent = 'Nenhum app disponível';
+          if (descEl) descEl.textContent = 'Cadastre ferramentas ou utilize o portal para registrar acessos automáticos.';
           if (btnEl) btnEl.textContent = 'Ver Todos os Apps';
         } else {
           if (iconEl) iconEl.className = 'fa-solid fa-magnifying-glass text-blue-500';
@@ -563,7 +597,7 @@ class App {
               </div>
             </div>
 
-            <!-- Star / Mais Acessados Button -->
+            <!-- Star / Favoritos Button -->
             <button
               type="button"
               class="pin-btn w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
@@ -571,7 +605,7 @@ class App {
                   ? 'text-amber-500 bg-amber-500/15 hover:bg-amber-500/25 shadow-2xs'
                   : 'text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }"
-              title="${isPinned ? 'Remover dos Mais Acessados' : 'Adicionar aos Mais Acessados (Acesso Rápido)'}"
+              title="${isPinned ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}"
               data-id="${tool.id}"
             >
               <i class="${isPinned ? 'fa-solid fa-star text-amber-400 text-xs' : 'fa-regular fa-star text-xs'}"></i>
@@ -683,7 +717,7 @@ class App {
           <button
             type="button"
             class="pin-btn text-xs ${isPinned ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'} cursor-pointer shrink-0 transition-colors p-1"
-            title="${isPinned ? 'Remover dos Mais Acessados' : 'Adicionar aos Mais Acessados (Acesso Rápido)'}"
+            title="${isPinned ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}"
             data-id="${tool.id}"
           >
             <i class="${isPinned ? 'fa-solid fa-star' : 'fa-regular fa-star'}"></i>
@@ -832,14 +866,14 @@ class App {
 
     this.showToast(
       nextState
-        ? `⭐ "${tool.name}" adicionado aos Mais Acessados!`
-        : `"${tool.name}" removido dos Mais Acessados.`
+        ? `⭐ "${tool.name}" adicionado aos Favoritos!`
+        : `"${tool.name}" removido dos Favoritos.`
     );
 
     try {
       await saveTools(this.tools);
     } catch (e) {
-      console.error('[App] Erro ao salvar status nos Mais Acessados:', e);
+      console.error('[App] Erro ao salvar status nos Favoritos:', e);
       this.showToast('Aviso: Erro ao sincronizar com servidor.');
     }
     this.render();
@@ -1602,6 +1636,7 @@ class App {
   renderCounters() {
     const filtered = this.getFilteredTools();
     const pinnedCount = this.tools.filter((t) => t.pinned).length;
+    const totalAccesses = this.tools.reduce((sum, t) => sum + (t.accessCount || 0), 0);
     const categoriesCount = new Set(this.tools.map((t) => t.category).filter(Boolean)).size;
 
     if (this.totalToolsCounter) this.totalToolsCounter.textContent = this.tools.length;
@@ -1612,10 +1647,12 @@ class App {
     // Atualiza os cartões KPI do Hero Banner
     const heroStatTotal = document.getElementById('hero-stat-total');
     const heroStatPinned = document.getElementById('hero-stat-pinned');
+    const heroStatAccesses = document.getElementById('hero-stat-accesses');
     const heroStatCategories = document.getElementById('hero-stat-categories');
 
     if (heroStatTotal) heroStatTotal.textContent = this.tools.length;
     if (heroStatPinned) heroStatPinned.textContent = pinnedCount;
+    if (heroStatAccesses) heroStatAccesses.textContent = totalAccesses;
     if (heroStatCategories) heroStatCategories.textContent = categoriesCount || 4;
   }
 
@@ -1625,6 +1662,7 @@ class App {
 
     tool.accessCount = (tool.accessCount || 0) + 1;
     tool.lastAccessedAt = new Date().toISOString();
+    this.renderCounters();
 
     try {
       await api.post(`/api/tools/${encodeURIComponent(id)}/access`, {});
