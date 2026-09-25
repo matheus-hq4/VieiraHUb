@@ -627,7 +627,8 @@ Espinha 08
 14: PA14.E08 | user/senha: op14.e08 | $Vcred#2026
 15: PA15.E08 | user/senha: op15.e08 | $Vcred#2026
 16: PA16.E08 | user/senha: op16.e08 | $Vcred#2026`
-  }
+  },
+  inventory_logs: []
 };
 
 class Database {

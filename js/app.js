@@ -335,12 +335,19 @@ class App {
       });
     }
 
-    // Global keyboard shortcuts
+    // Global keyboard shortcuts (Ctrl+K ou / foca a busca da aba ativa)
     window.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      const activeEl = document.activeElement;
+      const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+      const isCtrlK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
+      const isSlash = e.key === '/' && !isInputFocused;
+
+      if (isCtrlK || isSlash) {
         e.preventDefault();
-        if (this.searchInput) this.searchInput.focus();
+        this.focusActiveSearch();
       }
+
       if (e.key === 'Escape') {
         this.closeToolModal();
         this.closeJsonModal();
@@ -375,6 +382,26 @@ class App {
     const icon = this.toggleViewBtn.querySelector('i');
     if (icon) {
       icon.className = this.viewMode === 'grid' ? 'fa-solid fa-list text-sm' : 'fa-solid fa-table-cells-large text-sm';
+    }
+  }
+
+  // Foco inteligente na barra de busca da aba atualmente visível
+  focusActiveSearch() {
+    let targetInput = null;
+    if (this.activeTab === 'apps') {
+      targetInput = this.searchInput;
+    } else if (this.activeTab === 'vault') {
+      targetInput = document.getElementById('vault-search-input');
+    } else if (this.activeTab === 'inventory') {
+      targetInput = document.getElementById('inventory-search-input');
+    } else if (this.activeTab === 'logins') {
+      targetInput = document.getElementById('pane-ad-search-input');
+    }
+
+    if (!targetInput) targetInput = this.searchInput;
+    if (targetInput) {
+      targetInput.focus();
+      targetInput.select();
     }
   }
 
@@ -701,7 +728,7 @@ class App {
             </button>
           </div>
 
-          <!-- Metadata Badges (Protocol, Port, Env) -->
+          <!-- Metadata Badges (Protocol, Port, Env, Ping Status) -->
           <div class="flex flex-wrap items-center gap-1.5 mb-4 text-[10px] font-mono">
             ${
               tool.protocol
@@ -718,6 +745,20 @@ class App {
                 ? `<span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">${tool.environment}</span>`
                 : ''
             }
+            <button
+              type="button"
+              class="ping-tool-btn px-2 py-0.5 rounded-md border flex items-center gap-1 transition-all cursor-pointer ${
+                tool.status === 'offline'
+                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                  : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+              }"
+              title="Clique para testar conectividade/ping agora"
+              data-id="${tool.id}"
+            >
+              <span class="w-1.5 h-1.5 rounded-full ${tool.status === 'offline' ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}"></span>
+              <span class="ping-status-text font-sans font-medium text-[9px] uppercase">${tool.status === 'offline' ? 'Offline' : (tool.latency ? `${tool.latency}ms` : 'Online')}</span>
+              <i class="fa-solid fa-arrows-rotate text-[8px] opacity-60 ml-0.5"></i>
+            </button>
           </div>
         </div>
 
@@ -813,6 +854,19 @@ class App {
               <span class="text-[10px] px-1.5 py-0.2 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 ${tool.category}
               </span>
+              <button
+                type="button"
+                class="ping-tool-btn inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] border font-mono transition-colors cursor-pointer ${
+                  tool.status === 'offline'
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                }"
+                title="Clique para testar conectividade/ping agora"
+                data-id="${tool.id}"
+              >
+                <span class="w-1.5 h-1.5 rounded-full ${tool.status === 'offline' ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}"></span>
+                <span class="ping-status-text font-sans font-medium text-[8px] uppercase">${tool.status === 'offline' ? 'Offline' : (tool.latency ? `${tool.latency}ms` : 'Online')}</span>
+              </button>
             </div>
             <div class="flex items-center gap-2 font-mono text-[11px] text-slate-500 dark:text-slate-400 truncate">
               <span class="truncate">${tool.url_or_ip}</span>
@@ -894,6 +948,50 @@ class App {
         e.stopPropagation();
         const id = btn.getAttribute('data-id');
         this.handleTogglePin(id);
+      });
+    });
+
+    // Test Connectivity Ping Individual
+    this.toolsContainer.querySelectorAll('.ping-tool-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+
+        const textSpan = btn.querySelector('.ping-status-text');
+        const dotSpan = btn.querySelector('span:first-child');
+        const iconEl = btn.querySelector('i');
+
+        if (textSpan) textSpan.textContent = 'Testando...';
+        if (iconEl) iconEl.classList.add('fa-spin');
+        btn.classList.remove('bg-rose-500/10', 'text-rose-600', 'border-rose-500/30', 'bg-emerald-500/10', 'text-emerald-600', 'border-emerald-500/30');
+        btn.classList.add('bg-slate-500/10', 'text-slate-500', 'border-slate-500/30');
+
+        try {
+          const res = await api.get(`/api/tools/${encodeURIComponent(id)}/ping`);
+          if (iconEl) iconEl.classList.remove('fa-spin');
+
+          const tool = this.tools.find((t) => t.id === id);
+          if (tool) {
+            tool.status = res.status;
+            tool.latency = res.latency;
+          }
+
+          if (res.status === 'online') {
+            btn.className = 'ping-tool-btn px-2 py-0.5 rounded-md border flex items-center gap-1 transition-all cursor-pointer bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+            if (dotSpan) dotSpan.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
+            if (textSpan) textSpan.textContent = `${res.latency}ms`;
+            this.showToast(`Serviço respondendo (${res.latency}ms)!`);
+          } else {
+            btn.className = 'ping-tool-btn px-2 py-0.5 rounded-md border flex items-center gap-1 transition-all cursor-pointer bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+            if (dotSpan) dotSpan.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
+            if (textSpan) textSpan.textContent = 'Offline';
+            this.showToast('Serviço inacessível ou porta fechada.');
+          }
+        } catch (err) {
+          if (iconEl) iconEl.classList.remove('fa-spin');
+          if (textSpan) textSpan.textContent = 'Erro';
+        }
       });
     });
 

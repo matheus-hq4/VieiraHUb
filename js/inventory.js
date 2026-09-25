@@ -62,6 +62,18 @@ export class InventoryManager {
     this.openAddBtn = document.getElementById('open-add-inventory-btn');
     this.closeModalBtn = document.getElementById('inventory-modal-close-btn');
     this.cancelModalBtn = document.getElementById('inventory-modal-cancel-btn');
+
+    // Export & History Controls
+    this.exportCsvBtn = document.getElementById('export-inventory-csv-btn');
+    this.printReportBtn = document.getElementById('print-inventory-report-btn');
+    this.openLogsBtn = document.getElementById('open-inventory-logs-btn');
+
+    // Logs Modal
+    this.logsModal = document.getElementById('inventory-logs-modal');
+    this.logsCloseBtn = document.getElementById('inventory-logs-close-btn');
+    this.logsRefreshBtn = document.getElementById('inventory-logs-refresh-btn');
+    this.logsTableBody = document.getElementById('inventory-logs-table-body');
+    this.logsCountEl = document.getElementById('inventory-logs-count');
   }
 
   bindEvents() {
@@ -104,6 +116,27 @@ export class InventoryManager {
         e.preventDefault();
         this.handleSave();
       });
+    }
+
+    // Exportar CSV
+    if (this.exportCsvBtn) {
+      this.exportCsvBtn.addEventListener('click', () => this.exportCSV());
+    }
+
+    // Imprimir Relatório
+    if (this.printReportBtn) {
+      this.printReportBtn.addEventListener('click', () => this.printReport());
+    }
+
+    // Modal de Auditoria e Histórico
+    if (this.openLogsBtn) {
+      this.openLogsBtn.addEventListener('click', () => this.openLogsModal());
+    }
+    if (this.logsCloseBtn) {
+      this.logsCloseBtn.addEventListener('click', () => this.closeLogsModal());
+    }
+    if (this.logsRefreshBtn) {
+      this.logsRefreshBtn.addEventListener('click', () => this.loadLogs());
     }
   }
 
@@ -175,6 +208,200 @@ export class InventoryManager {
       }
     } catch (err) {
       alert('Erro ao alterar quantidade: ' + err.message);
+    }
+  }
+
+  // Exportar inventário para arquivo CSV formatado com UTF-8 BOM para Excel
+  exportCSV() {
+    if (!this.items || this.items.length === 0) {
+      alert('Não há itens cadastrados no inventário para exportar.');
+      return;
+    }
+
+    const headers = ['Nome', 'Categoria', 'Quantidade Atual', 'Estoque Mínimo', 'Localização', 'Status', 'Observações'];
+    const rows = this.items.map((it) => [
+      `"${(it.name || '').replace(/"/g, '""')}"`,
+      `"${(it.category || '').replace(/"/g, '""')}"`,
+      it.quantity || 0,
+      it.minQuantity || 0,
+      `"${(it.location || '').replace(/"/g, '""')}"`,
+      `"${(it.status || '').replace(/"/g, '""')}"`,
+      `"${(it.notes || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventario_ti_vieiratech_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.showToast('Inventário exportado com sucesso em CSV!');
+  }
+
+  // Imprimir relatório ou salvar em PDF para conferência física
+  printReport() {
+    if (!this.items || this.items.length === 0) {
+      alert('Não há itens no inventário para impressão.');
+      return;
+    }
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      alert('Por favor, permita pop-ups no seu navegador para imprimir o relatório.');
+      return;
+    }
+
+    const dateStr = new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const rowsHtml = this.items.map((it) => {
+      const isLow = it.quantity <= it.minQuantity;
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; ${isLow ? 'background-color: #fffbeb;' : ''}">
+          <td style="padding: 8px 12px; font-weight: bold;">${it.name}</td>
+          <td style="padding: 8px 12px;">${it.category}</td>
+          <td style="padding: 8px 12px; font-weight: bold; text-align: center; ${isLow ? 'color: #d97706;' : ''}">
+            ${it.quantity} ${isLow ? '(BAIXO)' : ''}
+          </td>
+          <td style="padding: 8px 12px; text-align: center;">${it.minQuantity}</td>
+          <td style="padding: 8px 12px;">${it.location || 'Armário TI'}</td>
+          <td style="padding: 8px 12px;">${it.status || 'Disponível'}</td>
+          <td style="padding: 8px 12px; font-size: 11px; color: #64748b;">${it.notes || '-'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Relatório de Inventário TI - VieiraTech HUB</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; color: #1e293b; }
+            h1 { font-size: 20px; margin: 0 0 4px 0; color: #0f172a; }
+            p { font-size: 12px; color: #64748b; margin: 0 0 16px 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+            th { background-color: #f1f5f9; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+            .header-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px; }
+            .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+            @media print {
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-box">
+            <div>
+              <h1>VIEIRATECH HUB - RELATÓRIO OFICIAL DE INVENTÁRIO TI</h1>
+              <p>Gerado em: ${dateStr} | Total de Itens: ${this.items.length}</p>
+            </div>
+            <button onclick="window.print()" style="padding: 8px 16px; background-color: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+              Imprimir / Salvar PDF
+            </button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Equipamento / Periférico</th>
+                <th>Categoria</th>
+                <th style="text-align: center;">Qtd Atual</th>
+                <th style="text-align: center;">Mínimo</th>
+                <th>Localização</th>
+                <th>Status</th>
+                <th>Observações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWin.document.close();
+  }
+
+  // Abrir modal de histórico e auditoria
+  async openLogsModal() {
+    if (this.logsModal) {
+      this.logsModal.classList.remove('hidden');
+      await this.loadLogs();
+    }
+  }
+
+  closeLogsModal() {
+    if (this.logsModal) {
+      this.logsModal.classList.add('hidden');
+    }
+  }
+
+  async loadLogs() {
+    if (!this.logsTableBody) return;
+    try {
+      const logs = await api.get('/api/inventory/logs?limit=50');
+      if (this.logsCountEl) {
+        this.logsCountEl.textContent = `Exibindo ${logs.length} movimentações recentes`;
+      }
+
+      if (!logs || logs.length === 0) {
+        this.logsTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-400">
+              Nenhuma movimentação registrada até o momento.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      this.logsTableBody.innerHTML = logs.map((log) => {
+        const isEntrada = log.action === 'entrada' || log.delta > 0;
+        const isExclusao = log.action === 'exclusao';
+        let actionBadge = '';
+
+        if (isExclusao) {
+          actionBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-500 border border-rose-500/30">Exclusão</span>';
+        } else if (isEntrada) {
+          actionBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">+${log.delta} Entrada</span>`;
+        } else {
+          actionBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">${log.delta} Baixa</span>`;
+        }
+
+        const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : '-';
+
+        return `
+          <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+            <td class="px-3.5 py-2.5 font-mono text-[11px] text-slate-500">${dateStr}</td>
+            <td class="px-3.5 py-2.5 font-semibold text-slate-800 dark:text-slate-200">${log.itemName || 'Item'}</td>
+            <td class="px-3.5 py-2.5">${actionBadge}</td>
+            <td class="px-3.5 py-2.5 font-mono text-slate-600 dark:text-slate-300">
+              ${log.previousQty} &rarr; <strong>${log.newQty}</strong>
+            </td>
+            <td class="px-3.5 py-2.5 text-slate-500">
+              <div class="flex items-center gap-1.5">
+                <i class="fa-regular fa-user text-[10px] text-slate-400"></i>
+                <span class="font-medium text-slate-700 dark:text-slate-300">${log.user || 'Técnico'}</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      console.error('[Inventory] Erro ao carregar logs:', err);
     }
   }
 

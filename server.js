@@ -1,5 +1,8 @@
 const express = require('express');
 const path = require('path');
+const net = require('net');
+const http = require('http');
+const https = require('https');
 const dotenv = require('dotenv');
 
 const { db, hashPassword } = require('./server/db');
@@ -204,6 +207,120 @@ app.post('/api/tools/:id/access', requireAuth, (req, res) => {
   return res.json({ id: updated.id, accessCount: updated.accessCount, lastAccessedAt });
 });
 
+// Helper de teste de conectividade (TCP Socket com timeout seguro)
+function testConnectivity(target, portOverride, timeoutMs = 2000) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    let host = target || '';
+    let port = portOverride ? parseInt(portOverride, 10) : null;
+
+    // Se vier http:// ou https://, extrai host e porta
+    try {
+      if (host.includes('://')) {
+        const u = new URL(host);
+        host = u.hostname;
+        if (!port && u.port) port = parseInt(u.port, 10);
+        if (!port) port = u.protocol === 'https:' ? 443 : 80;
+      } else if (host.includes(':')) {
+        const parts = host.split(':');
+        host = parts[0];
+        if (!port && parts[1]) port = parseInt(parts[1], 10);
+      }
+    } catch {
+      // Ignora erro de parse e segue com fallback
+    }
+
+    if (!port) port = 80;
+    host = host.trim();
+
+    if (!host) {
+      return resolve({ status: 'offline', latency: 0, error: 'Endereço vazio' });
+    }
+
+    const socket = new net.Socket();
+    let resolved = false;
+
+    socket.setTimeout(timeoutMs);
+
+    socket.on('connect', () => {
+      if (!resolved) {
+        resolved = true;
+        const latency = Date.now() - start;
+        socket.destroy();
+        resolve({ status: 'online', latency, host, port });
+      }
+    });
+
+    socket.on('timeout', () => {
+      if (!resolved) {
+        resolved = true;
+        socket.destroy();
+        resolve({ status: 'offline', latency: timeoutMs, error: 'Tempo limite excedido', host, port });
+      }
+    });
+
+    socket.on('error', (err) => {
+      if (!resolved) {
+        resolved = true;
+        socket.destroy();
+        // Em rede local, 'ECONNREFUSED' significa que a máquina/IP está ONLINE e respondeu na camada TCP!
+        if (err.code === 'ECONNREFUSED') {
+          resolve({ status: 'online', latency: Date.now() - start, note: 'Host respondeu (porta fechada)', host, port });
+        } else {
+          resolve({ status: 'offline', latency: Date.now() - start, error: err.code || 'Falha de conexão', host, port });
+        }
+      }
+    });
+
+    try {
+      socket.connect(port, host);
+    } catch (e) {
+      if (!resolved) {
+        resolved = true;
+        resolve({ status: 'offline', latency: 0, error: e.message, host, port });
+      }
+    }
+  });
+}
+
+// Testar conectividade de uma ferramenta individual
+app.get('/api/tools/:id/ping', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const tool = db.findById('tools', id);
+  if (!tool) return res.status(404).json({ error: 'Ferramenta não encontrada.' });
+
+  const result = await testConnectivity(tool.url_or_ip, tool.port);
+  db.update('tools', id, {
+    status: result.status,
+    latency: result.latency,
+    lastPingAt: new Date().toISOString()
+  });
+
+  return res.json({ id, ...result });
+});
+
+// Testar conectividade em lote (todas ou lista de IDs)
+app.post('/api/tools/ping-batch', requireAuth, async (req, res) => {
+  const tools = db.get('tools');
+  const results = {};
+
+  // Limita até 15 testes paralelos para não sobrecarregar
+  const batch = tools.slice(0, 20);
+  await Promise.all(
+    batch.map(async (t) => {
+      const res = await testConnectivity(t.url_or_ip, t.port, 1500);
+      results[t.id] = res;
+      db.update('tools', t.id, {
+        status: res.status,
+        latency: res.latency,
+        lastPingAt: new Date().toISOString()
+      });
+    })
+  );
+
+  return res.json(results);
+});
+
 // Excluir ferramenta (apenas Administrador)
 app.delete('/api/tools/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
@@ -292,30 +409,88 @@ app.post('/api/inventory', requireAuth, (req, res) => {
 // Atualizar item de estoque
 app.put('/api/inventory/:id', requireAuth, (req, res) => {
   const { id } = req.params;
+  const current = db.findById('inventory', id);
+  if (!current) return res.status(404).json({ error: 'Item de estoque não encontrado.' });
+
   const updated = db.update('inventory', id, req.body);
-  if (!updated) return res.status(404).json({ error: 'Item de estoque não encontrado.' });
+
+  // Se a quantidade foi alterada via edição direta, registra log
+  if (req.body.quantity !== undefined && parseInt(req.body.quantity, 10) !== current.quantity) {
+    const newQty = parseInt(req.body.quantity, 10);
+    const delta = newQty - current.quantity;
+    db.insert('inventory_logs', {
+      itemId: id,
+      itemName: updated.name || current.name,
+      previousQty: current.quantity,
+      newQty,
+      delta,
+      action: delta > 0 ? 'entrada' : 'saida',
+      user: req.user ? (req.user.name || req.user.username) : 'Técnico TI',
+      reason: req.body.reason || 'Ajuste manual via edição',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   return res.json(updated);
 });
 
-// Ajuste rápido de quantidade (+1 ou -1) - Liberado para qualquer técnico autenticado!
+// Ajuste rápido de quantidade (+1 ou -1) com auditoria
 app.patch('/api/inventory/:id/qty', requireAuth, (req, res) => {
   const { id } = req.params;
-  const { delta } = req.body || {};
+  const { delta, reason } = req.body || {};
 
   const item = db.findById('inventory', id);
   if (!item) return res.status(404).json({ error: 'Item não encontrado.' });
 
-  const nextQty = Math.max(0, (item.quantity || 0) + (parseInt(delta, 10) || 0));
+  const numDelta = parseInt(delta, 10) || 0;
+  const nextQty = Math.max(0, (item.quantity || 0) + numDelta);
   const updated = db.update('inventory', id, { quantity: nextQty });
 
+  // Grava log de auditoria
+  db.insert('inventory_logs', {
+    itemId: id,
+    itemName: item.name,
+    previousQty: item.quantity,
+    newQty: nextQty,
+    delta: numDelta,
+    action: numDelta > 0 ? 'entrada' : 'saida',
+    user: req.user ? (req.user.name || req.user.username) : 'Técnico TI',
+    reason: reason || (numDelta > 0 ? 'Entrada rápida no estoque (+1)' : 'Baixa rápida no estoque (-1)'),
+    timestamp: new Date().toISOString()
+  });
+
   return res.json(updated);
+});
+
+// Listar histórico de movimentações (auditoria)
+app.get('/api/inventory/logs', requireAuth, (req, res) => {
+  const logs = db.get('inventory_logs') || [];
+  const limit = parseInt(req.query.limit, 10) || 50;
+  const sorted = [...logs].reverse().slice(0, limit);
+  return res.json(sorted);
 });
 
 // Excluir item de estoque (apenas Administrador)
 app.delete('/api/inventory/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
+  const item = db.findById('inventory', id);
   const success = db.delete('inventory', id);
   if (!success) return res.status(404).json({ error: 'Item não encontrado.' });
+
+  if (item) {
+    db.insert('inventory_logs', {
+      itemId: id,
+      itemName: item.name,
+      previousQty: item.quantity,
+      newQty: 0,
+      delta: -item.quantity,
+      action: 'exclusao',
+      user: req.user ? (req.user.name || req.user.username) : 'Administrador',
+      reason: 'Item removido do inventário',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   return res.json({ success: true });
 });
 
@@ -340,6 +515,26 @@ app.post('/api/ad-logins', requireAuth, (req, res) => {
   return res.json({ success: true, message: 'Mapeamento AD atualizado com sucesso no servidor.' });
 });
 
+
+// ==========================================
+// 7. BACKUP DO SISTEMA (APENAS ADMINISTRADOR)
+// ==========================================
+
+// Download direto do snapshot do banco de dados (JSON)
+app.get('/api/admin/backup', requireAdmin, (req, res) => {
+  try {
+    const data = db.read();
+    const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `vieiratech_hub_backup_${dateStr}.json`;
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(JSON.stringify(data, null, 2));
+  } catch (e) {
+    console.error('[Backup] Erro ao gerar backup:', e);
+    return res.status(500).json({ error: 'Erro ao gerar backup no servidor.' });
+  }
+});
 
 // Health check
 app.get('/api/health', (req, res) => {

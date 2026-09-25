@@ -216,7 +216,54 @@ export class AuthManager {
       if (legacyUserRole) legacyUserRole.textContent = isAdmin ? 'Admin' : 'Operador';
     }
 
-    // Exibe botão de gerenciamento de usuários no menu caso seja admin
+    // Exibe botão de gerenciamento de usuários e backup no menu caso seja admin
+    const adminBackupBtn = document.getElementById('admin-backup-btn');
+    if (adminBackupBtn) {
+      if (user && user.role === 'admin') {
+        adminBackupBtn.classList.remove('hidden');
+        adminBackupBtn.classList.add('flex');
+        if (!adminBackupBtn.dataset.bound) {
+          adminBackupBtn.dataset.bound = 'true';
+          adminBackupBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+              const token = api.getToken();
+              const response = await fetch('/api/admin/backup', {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Falha ao baixar backup');
+              }
+              const blob = await response.blob();
+              const disposition = response.headers.get('content-disposition');
+              let filename = `vieiratech_hub_backup_${new Date().toISOString().slice(0, 10)}.json`;
+              if (disposition && disposition.includes('filename=')) {
+                const match = disposition.match(/filename="?([^"]+)"?/);
+                if (match && match[1]) filename = match[1];
+              }
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+            } catch (err) {
+              alert('Erro ao realizar backup do servidor: ' + err.message);
+            }
+          });
+        }
+      } else {
+        adminBackupBtn.classList.add('hidden');
+        adminBackupBtn.classList.remove('flex');
+      }
+    }
+
     if (adminMenuBtn) {
       if (user && user.role === 'admin') {
         adminMenuBtn.classList.remove('hidden');
