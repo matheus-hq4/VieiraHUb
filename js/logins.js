@@ -18,6 +18,13 @@ class LoginsApp {
     this.initDOMElements();
     this.bindEvents();
 
+    // Detecção de abertura direta no Bloco de Notas / Editor
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedView = urlParams.get('view');
+    if (requestedView === 'editor' || window.location.hash === '#editor') {
+      this.switchView('editor');
+    }
+
     if (this.rawText) {
       this.render();
     } else if (this.departmentsContainer) {
@@ -305,7 +312,7 @@ class LoginsApp {
     if (this.addUserModal) this.addUserModal.classList.add('hidden');
   }
 
-  handleCreateUser() {
+  async handleCreateUser() {
     const dept = this.modalUserDept?.value.trim();
     const subDept = this.modalUserSubDept?.value.trim();
     const userName = this.modalUserName?.value.trim();

@@ -29,6 +29,21 @@
         }
       }
     </script>
+    <script>
+      (function() {
+        try {
+          const t = localStorage.getItem('vieiratech_hub_theme_v1');
+          const isDark = t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          }
+        } catch (_) {}
+      })();
+    </script>
 
     <!-- Marked.js CDN for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
