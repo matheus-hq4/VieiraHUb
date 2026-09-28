@@ -25,6 +25,7 @@ const SEED_DATA = {
       username: 'admin',
       name: 'Administrador Master',
       role: 'admin', // 'admin' | 'operador'
+      plainPassword: '$Vi3ir@Tech',
       salt: 'b5a8f4c2e1d09876',
       passwordHash: crypto.pbkdf2Sync('$Vi3ir@Tech', 'b5a8f4c2e1d09876', 10000, 64, 'sha512').toString('hex'),
       createdAt: new Date().toISOString()
@@ -34,6 +35,7 @@ const SEED_DATA = {
       username: 'vieiratech',
       name: 'VieiraTech TI',
       role: 'admin',
+      plainPassword: '$Vi3ir@Tech',
       salt: '7c8d9e0f1a2b3c4d',
       passwordHash: crypto.pbkdf2Sync('$Vi3ir@Tech', '7c8d9e0f1a2b3c4d', 10000, 64, 'sha512').toString('hex'),
       createdAt: new Date().toISOString()

@@ -1386,7 +1386,7 @@ class App {
 
       const currentLogged = AuthManager.getCurrentUser();
 
-      this.usersTableBody.innerHTML = users.map((u) => {
+      this.usersTableBody.innerHTML = users.map((u, idx) => {
         const isSelf = currentLogged && currentLogged.id === u.id;
         const roleBadge = u.role === 'admin'
           ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">Administrador</span>'
@@ -1395,25 +1395,116 @@ class App {
         return `
           <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
             <td class="px-3.5 py-2.5 font-medium text-slate-800 dark:text-slate-200">${u.name}</td>
-            <td class="px-3.5 py-2.5 font-mono text-slate-600 dark:text-slate-400">${u.username}</td>
+            <td class="px-3.5 py-2.5 font-mono text-slate-600 dark:text-slate-400 font-semibold">${u.username}</td>
             <td class="px-3.5 py-2.5">${roleBadge}</td>
+            <td class="px-3.5 py-2.5">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80">
+                <span class="user-pass-display font-mono text-xs select-all text-slate-700 dark:text-slate-200 font-medium">••••••••</span>
+                <button
+                  type="button"
+                  class="user-toggle-pass-btn text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-0.5 rounded-md transition-colors cursor-pointer"
+                  title="Mostrar / ocultar senha"
+                  data-index="${idx}"
+                  data-visible="false"
+                >
+                  <i class="fa-regular fa-eye text-xs"></i>
+                </button>
+                <button
+                  type="button"
+                  class="user-copy-pass-btn text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 p-0.5 rounded-md transition-colors cursor-pointer"
+                  title="Copiar senha"
+                  data-index="${idx}"
+                  data-user="${u.username}"
+                >
+                  <i class="fa-regular fa-copy text-xs"></i>
+                </button>
+              </div>
+            </td>
             <td class="px-3.5 py-2.5 text-right">
-              ${isSelf ? '<span class="text-[11px] text-slate-400 italic">Conectado</span>' : `
+              <div class="flex items-center justify-end gap-1">
                 <button
                   type="button"
                   data-user-id="${u.id}"
                   data-username="${u.username}"
-                  class="user-delete-btn text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition-colors cursor-pointer"
-                  title="Excluir Usuário"
+                  class="user-edit-pass-btn text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 p-1.5 rounded-lg transition-colors cursor-pointer"
+                  title="Alterar Senha deste Usuário"
                 >
-                  <i class="fa-solid fa-trash-can text-xs"></i>
+                  <i class="fa-solid fa-key text-xs"></i>
                 </button>
-              `}
+                ${isSelf ? '<span class="text-[11px] text-slate-400 italic ml-1">Conectado</span>' : `
+                  <button
+                    type="button"
+                    data-user-id="${u.id}"
+                    data-username="${u.username}"
+                    class="user-delete-btn text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition-colors cursor-pointer"
+                    title="Excluir Usuário"
+                  >
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                `}
+              </div>
             </td>
           </tr>
         `;
       }).join('');
 
+      // Toggle de visualização da senha
+      this.usersTableBody.querySelectorAll('.user-toggle-pass-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-index'), 10);
+          const passSpan = btn.parentElement.querySelector('.user-pass-display');
+          const icon = btn.querySelector('i');
+          const isVisible = btn.getAttribute('data-visible') === 'true';
+          const userObj = users[idx];
+          const pass = userObj ? (userObj.password || '') : '';
+
+          if (isVisible) {
+            passSpan.textContent = '••••••••';
+            btn.setAttribute('data-visible', 'false');
+            icon.className = 'fa-regular fa-eye text-xs';
+          } else {
+            passSpan.textContent = pass;
+            btn.setAttribute('data-visible', 'true');
+            icon.className = 'fa-regular fa-eye-slash text-xs text-blue-500';
+          }
+        });
+      });
+
+      // Copiar senha individual
+      this.usersTableBody.querySelectorAll('.user-copy-pass-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-index'), 10);
+          const userObj = users[idx];
+          const pass = userObj ? (userObj.password || '') : '';
+          const uname = btn.getAttribute('data-user') || '';
+          this.copyToClipboard(pass, `Senha do usuário "${uname}" copiada!`);
+        });
+      });
+
+      // Alterar Senha individual
+      this.usersTableBody.querySelectorAll('.user-edit-pass-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-user-id');
+          const username = btn.getAttribute('data-username');
+          const newPass = window.prompt(`Digite a nova senha para o usuário "${username}":`);
+          if (newPass !== null) {
+            const clean = newPass.trim();
+            if (!clean) {
+              alert('A senha não pode ser vazia.');
+              return;
+            }
+            try {
+              await api.put('/api/users/' + id, { password: clean });
+              this.showToast(`Senha do usuário "${username}" atualizada com sucesso!`);
+              await this.loadUsersTable();
+            } catch (err) {
+              alert('Erro ao atualizar senha: ' + err.message);
+            }
+          }
+        });
+      });
+
+      // Exclusão de usuário
       this.usersTableBody.querySelectorAll('.user-delete-btn').forEach((btn) => {
         btn.addEventListener('click', async () => {
           const id = btn.getAttribute('data-user-id');

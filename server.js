@@ -68,15 +68,26 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 // 2. GESTÃO DE USUÁRIOS (APENAS ADMINISTRADOR)
 // ==========================================
 
-// Listar usuários da equipe de TI
+// Listar usuários da equipe de TI (Apenas Administrador tem acesso e pode ver senhas)
 app.get('/api/users', requireAdmin, (req, res) => {
-  const users = db.get('users').map((u) => ({
-    id: u.id,
-    username: u.username,
-    name: u.name,
-    role: u.role,
-    createdAt: u.createdAt
-  }));
+  const users = db.get('users').map((u) => {
+    let plainPass = u.plainPassword;
+    if (!plainPass) {
+      if (u.username === 'admin' || u.username === 'vieiratech') {
+        plainPass = '$Vi3ir@Tech';
+      } else if (u.username === 'teste') {
+        plainPass = '1234';
+      }
+    }
+    return {
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      role: u.role,
+      password: plainPass || '',
+      createdAt: u.createdAt
+    };
+  });
   return res.json(users);
 });
 
@@ -94,12 +105,14 @@ app.post('/api/users', requireAdmin, (req, res) => {
     return res.status(409).json({ error: `O usuário "${cleanUser}" já está cadastrado.` });
   }
 
-  const { hash, salt } = hashPassword(password);
+  const cleanPass = password.trim();
+  const { hash, salt } = hashPassword(cleanPass);
   const newUser = {
     id: `usr-${Date.now()}`,
     username: cleanUser,
     name: name ? name.trim() : cleanUser,
     role: role === 'admin' ? 'admin' : 'operador',
+    plainPassword: cleanPass,
     salt,
     passwordHash: hash,
     createdAt: new Date().toISOString()
@@ -112,6 +125,7 @@ app.post('/api/users', requireAdmin, (req, res) => {
     username: newUser.username,
     name: newUser.name,
     role: newUser.role,
+    password: newUser.plainPassword,
     createdAt: newUser.createdAt
   });
 });
@@ -130,9 +144,11 @@ app.put('/api/users/:id', requireAdmin, (req, res) => {
   if (name) updates.name = name.trim();
   if (role) updates.role = role === 'admin' ? 'admin' : 'operador';
   if (password && password.trim()) {
-    const { hash, salt } = hashPassword(password.trim());
+    const cleanPass = password.trim();
+    const { hash, salt } = hashPassword(cleanPass);
     updates.passwordHash = hash;
     updates.salt = salt;
+    updates.plainPassword = cleanPass;
   }
 
   const updated = db.update('users', id, updates);
@@ -140,7 +156,8 @@ app.put('/api/users/:id', requireAdmin, (req, res) => {
     id: updated.id,
     username: updated.username,
     name: updated.name,
-    role: updated.role
+    role: updated.role,
+    password: updated.plainPassword || ''
   });
 });
 
