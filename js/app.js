@@ -201,6 +201,10 @@ class App {
 
     if (this.emptyStateClearBtn) {
       this.emptyStateClearBtn.addEventListener('click', () => {
+        if (this.tools.length === 0) {
+          this.openToolModal(null);
+          return;
+        }
         this.searchTerm = '';
         this.searchInput.value = '';
         this.activeCategory = 'Todos';
@@ -626,7 +630,12 @@ class App {
         const iconEl = this.emptyState.querySelector('.rounded-2xl i');
         const btnEl = this.emptyStateClearBtn;
 
-        if (isFavoritos && !this.searchTerm) {
+        if (this.tools.length === 0) {
+          if (iconEl) iconEl.className = 'fa-solid fa-layer-group text-blue-500';
+          if (titleEl) titleEl.textContent = 'Nenhuma ferramenta cadastrada';
+          if (descEl) descEl.textContent = 'O banco de acessos está limpo. Comece cadastrando sua primeira ferramenta no botão acima!';
+          if (btnEl) btnEl.textContent = 'Adicionar Ferramenta';
+        } else if (isFavoritos && !this.searchTerm) {
           if (iconEl) iconEl.className = 'fa-solid fa-star text-amber-400';
           if (titleEl) titleEl.textContent = 'Nenhum app marcado nos Favoritos';
           if (descEl) descEl.textContent = 'Clique na estrela (⭐) em qualquer ferramenta para marcá-la como favorita e fixar seu acesso!';
