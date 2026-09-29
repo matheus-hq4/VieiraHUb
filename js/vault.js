@@ -113,6 +113,8 @@ export class VaultManager {
     this.openAddBtn = document.getElementById('open-add-password-btn');
     this.closeModalBtn = document.getElementById('vault-modal-close-btn');
     this.cancelModalBtn = document.getElementById('vault-modal-cancel-btn');
+    this.adminOnlyWrapper = document.getElementById('vault-admin-only-wrapper');
+    this.adminOnlyCheckbox = document.getElementById('vault-form-admin-only');
 
     // Modal Gerador de Senhas
     this.generatorModal = document.getElementById('generator-modal');
@@ -255,6 +257,17 @@ export class VaultManager {
       form.elements['vault-notes'].value = item ? item.notes || '' : '';
     }
 
+    // Apenas administradores veem a opção de restringir a senha
+    if (this.adminOnlyWrapper && this.adminOnlyCheckbox) {
+      if (api.isAdmin()) {
+        this.adminOnlyWrapper.classList.remove('hidden');
+        this.adminOnlyCheckbox.checked = item ? !!item.adminOnly : false;
+      } else {
+        this.adminOnlyWrapper.classList.add('hidden');
+        this.adminOnlyCheckbox.checked = false;
+      }
+    }
+
     if (this.modal) this.modal.classList.remove('hidden');
   }
 
@@ -272,13 +285,14 @@ export class VaultManager {
     const username = form.elements['vault-username'].value.trim();
     const password = form.elements['vault-password'].value.trim();
     const notes = form.elements['vault-notes'].value.trim();
+    const adminOnly = api.isAdmin() && this.adminOnlyCheckbox ? this.adminOnlyCheckbox.checked : false;
 
     if (!title || !password) {
       alert('Por favor, informe pelo menos o Título/Serviço e a Senha.');
       return;
     }
 
-    const payload = { title, category, username, password, notes };
+    const payload = { title, category, username, password, notes, adminOnly };
 
     try {
       if (this.editingId) {
@@ -498,7 +512,14 @@ export class VaultManager {
                 <i class="${categoryIcon} text-sm"></i>
               </div>
               <div class="min-w-0">
-                <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug truncate">${item.title}</h4>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug truncate">${item.title}</h4>
+                  ${item.adminOnly ? `
+                    <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shrink-0" title="Credencial restrita: visível apenas para Administradores">
+                      <i class="fa-solid fa-user-shield text-[8px]"></i> Admin
+                    </span>
+                  ` : ''}
+                </div>
                 <span class="text-[10px] font-medium px-2 py-0.5 rounded-full border ${categoryColor}">${item.category}</span>
               </div>
             </div>
@@ -654,8 +675,13 @@ export class VaultManager {
           </div>
 
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 flex-wrap">
               <span class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">${item.title}</span>
+              ${item.adminOnly ? `
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shrink-0" title="Credencial restrita: visível apenas para Administradores">
+                  <i class="fa-solid fa-user-shield text-[8px]"></i> Admin
+                </span>
+              ` : ''}
               <span class="text-[10px] px-1.5 py-0.2 rounded font-medium border ${categoryColor}">${item.category}</span>
             </div>
             <div class="flex items-center gap-3 font-mono text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">

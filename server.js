@@ -352,16 +352,25 @@ app.delete('/api/tools/:id', requireAdmin, (req, res) => {
 
 // Listar senhas do cofre
 app.get('/api/vault', requireAuth, (req, res) => {
-  return res.json(db.get('vault'));
+  const allVault = db.get('vault') || [];
+  // Administradores veem todas as senhas; Operadores só veem senhas que NÃO são adminOnly
+  if (req.user && req.user.role === 'admin') {
+    return res.json(allVault);
+  }
+  const visible = allVault.filter((item) => !item.adminOnly);
+  return res.json(visible);
 });
 
 // Adicionar nova senha
 app.post('/api/vault', requireAuth, (req, res) => {
-  const { title, category, username, password, notes } = req.body || {};
+  const { title, category, username, password, notes, adminOnly } = req.body || {};
 
   if (!title || !password) {
     return res.status(400).json({ error: 'Título e senha são obrigatórios.' });
   }
+
+  // Apenas Administradores podem definir a credencial como adminOnly
+  const isOnlyAdmin = (req.user && req.user.role === 'admin') ? !!adminOnly : false;
 
   const newPass = db.insert('vault', {
     title: title.trim(),
@@ -369,6 +378,7 @@ app.post('/api/vault', requireAuth, (req, res) => {
     username: username ? username.trim() : '',
     password: password.trim(),
     notes: notes ? notes.trim() : '',
+    adminOnly: isOnlyAdmin,
     updatedAt: new Date().toISOString().slice(0, 10)
   });
 
@@ -378,10 +388,26 @@ app.post('/api/vault', requireAuth, (req, res) => {
 // Atualizar senha
 app.put('/api/vault/:id', requireAuth, (req, res) => {
   const { id } = req.params;
-  const updates = { ...req.body, updatedAt: new Date().toISOString().slice(0, 10) };
-  const updated = db.update('vault', id, updates);
+  const existing = db.findById('vault', id);
+  if (!existing) return res.status(404).json({ error: 'Credencial não encontrada no cofre.' });
 
-  if (!updated) return res.status(404).json({ error: 'Credencial não encontrada no cofre.' });
+  // Se o item for restrito para admin e o usuário atual não for admin, bloqueia
+  if (existing.adminOnly && (!req.user || req.user.role !== 'admin')) {
+    return res.status(403).json({ error: 'Apenas administradores podem modificar esta credencial restrita.' });
+  }
+
+  const updates = { ...req.body, updatedAt: new Date().toISOString().slice(0, 10) };
+
+  // Apenas Administradores podem alterar o status adminOnly
+  if (req.user && req.user.role === 'admin') {
+    if (typeof req.body.adminOnly !== 'undefined') {
+      updates.adminOnly = !!req.body.adminOnly;
+    }
+  } else {
+    delete updates.adminOnly;
+  }
+
+  const updated = db.update('vault', id, updates);
   return res.json(updated);
 });
 
