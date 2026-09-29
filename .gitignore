@@ -7,8 +7,7 @@ coverage/
 .env
 .env.local
 !.env.example
-backup_v1/
-backup_v2/
+backup_v*/
 backup_principal/
 scratch/
 data/
