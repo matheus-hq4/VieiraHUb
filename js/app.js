@@ -717,7 +717,7 @@ class App {
           </div>
 
           <!-- Description -->
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2 leading-relaxed h-8">
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed break-words">
             ${tool.description || 'Sem descrição informada.'}
           </p>
 

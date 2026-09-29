@@ -15,11 +15,13 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// CORS middleware para permitir chamadas seguras na rede local
+// CORS e Embedding middleware para permitir chamadas e iframe em sistemas na rede local
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token');
+  res.header('Content-Security-Policy', "frame-ancestors *");
+  res.removeHeader('X-Frame-Options');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
