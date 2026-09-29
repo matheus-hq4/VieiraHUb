@@ -10,5 +10,6 @@ coverage/
 backup_v*/
 backup_principal/
 scratch/
-data/
+data/*
+!data/db.json
 logs/
