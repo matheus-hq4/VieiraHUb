@@ -111,12 +111,31 @@ export class InventoryManager {
     if (this.cancelModalBtn) {
       this.cancelModalBtn.addEventListener('click', () => this.closeModal());
     }
+    if (this.modal) {
+      this.modal.addEventListener('click', (e) => {
+        if (e.target === this.modal || e.target.classList.contains('backdrop-blur-xs')) {
+          this.closeModal();
+        }
+      });
+    }
     if (this.modalForm) {
       this.modalForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleSave();
       });
     }
+
+    // Fechar modais ao pressionar ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.modal && !this.modal.classList.contains('hidden')) {
+          this.closeModal();
+        }
+        if (this.logsModal && !this.logsModal.classList.contains('hidden')) {
+          this.closeLogsModal();
+        }
+      }
+    });
 
     // Exportar CSV
     if (this.exportCsvBtn) {
@@ -138,6 +157,13 @@ export class InventoryManager {
     if (this.logsRefreshBtn) {
       this.logsRefreshBtn.addEventListener('click', () => this.loadLogs());
     }
+    if (this.logsModal) {
+      this.logsModal.addEventListener('click', (e) => {
+        if (e.target === this.logsModal || e.target.classList.contains('backdrop-blur-xs')) {
+          this.closeLogsModal();
+        }
+      });
+    }
   }
 
   openModal(item = null) {
@@ -148,16 +174,38 @@ export class InventoryManager {
 
     const form = this.modalForm;
     if (form) {
-      form.elements['inv-name'].value = item ? item.name : '';
-      form.elements['inv-category'].value = item ? item.category : 'Periféricos';
-      form.elements['inv-quantity'].value = item ? item.quantity : 1;
-      form.elements['inv-min-quantity'].value = item ? item.minQuantity : 2;
-      form.elements['inv-location'].value = item ? item.location || '' : '';
-      form.elements['inv-status'].value = item ? item.status : 'Disponível';
-      form.elements['inv-notes'].value = item ? item.notes || '' : '';
+      if (form.elements['inv-name']) {
+        form.elements['inv-name'].value = item ? item.name || '' : '';
+      }
+      if (form.elements['inv-category']) {
+        form.elements['inv-category'].value = item ? item.category || 'Periféricos' : 'Periféricos';
+      }
+      if (form.elements['inv-quantity']) {
+        form.elements['inv-quantity'].value = item ? (item.quantity !== undefined ? item.quantity : 1) : 1;
+      }
+      const minField = form.elements['inv-min-quantity'] || form.elements['inv-min'];
+      if (minField) {
+        minField.value = item ? (item.minQuantity !== undefined ? item.minQuantity : 2) : 2;
+      }
+      if (form.elements['inv-location']) {
+        form.elements['inv-location'].value = item ? item.location || '' : '';
+      }
+      if (form.elements['inv-status']) {
+        form.elements['inv-status'].value = item ? item.status || 'Disponível' : 'Disponível';
+      }
+      if (form.elements['inv-notes']) {
+        form.elements['inv-notes'].value = item ? item.notes || '' : '';
+      }
     }
 
-    if (this.modal) this.modal.classList.remove('hidden');
+    if (this.modal) {
+      this.modal.classList.remove('hidden');
+      // Focar o campo de nome automaticamente
+      const nameInput = form?.elements['inv-name'];
+      if (nameInput) {
+        setTimeout(() => nameInput.focus(), 50);
+      }
+    }
   }
 
   closeModal() {
@@ -169,13 +217,14 @@ export class InventoryManager {
     const form = this.modalForm;
     if (!form) return;
 
-    const name = form.elements['inv-name'].value.trim();
-    const category = form.elements['inv-category'].value.trim();
-    const quantity = parseInt(form.elements['inv-quantity'].value, 10) || 0;
-    const minQuantity = parseInt(form.elements['inv-min-quantity'].value, 10) || 0;
-    const location = form.elements['inv-location'].value.trim();
-    const status = form.elements['inv-status'].value.trim();
-    const notes = form.elements['inv-notes'].value.trim();
+    const name = form.elements['inv-name']?.value?.trim() || '';
+    const category = form.elements['inv-category']?.value?.trim() || 'Periféricos';
+    const quantity = parseInt(form.elements['inv-quantity']?.value, 10) || 0;
+    const minField = form.elements['inv-min-quantity'] || form.elements['inv-min'];
+    const minQuantity = parseInt(minField?.value, 10) || 0;
+    const location = form.elements['inv-location']?.value?.trim() || '';
+    const status = form.elements['inv-status']?.value?.trim() || 'Disponível';
+    const notes = form.elements['inv-notes']?.value?.trim() || '';
 
     if (!name) {
       alert('Por favor, informe o Nome do item.');
@@ -565,8 +614,27 @@ export class InventoryManager {
                 : 'Cadastre seu primeiro equipamento ou periférico no botão acima.'
             }
           </p>
+          ${
+            !this.searchTerm && this.activeCategory !== 'Favoritos'
+              ? `
+            <button
+              type="button"
+              id="inventory-empty-add-btn"
+              class="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all inline-flex items-center gap-2 cursor-pointer"
+            >
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>Novo Item de Estoque</span>
+            </button>
+          `
+              : ''
+          }
         </div>
       `;
+
+      const emptyAddBtn = this.container.querySelector('#inventory-empty-add-btn');
+      if (emptyAddBtn) {
+        emptyAddBtn.addEventListener('click', () => this.openModal());
+      }
       return;
     }
 
