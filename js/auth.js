@@ -108,44 +108,24 @@ export class AuthManager {
       });
     }
 
-    // Atualiza cabeçalho com usuário ativo
-    AuthManager.updateUserBadge();
+    // Limpa chave legada que causava loop de sessão expirada
+    localStorage.removeItem('vieiratech_auth_session_v1');
 
-    // Se já autenticado, fecha modal e executa callback
-    if (AuthManager.isAuthenticated()) {
-      if (overlay) overlay.classList.add('hidden');
-      if (onSuccessCallback) onSuccessCallback(AuthManager.getCurrentUser());
-      return;
-    }
-
-    // Migração transparente de sessões locais anteriores
-    if (localStorage.getItem('vieiratech_auth_session_v1') === 'true') {
-      AuthManager.login('admin', '$Vi3ir@Tech', true).then((user) => {
-        if (overlay) overlay.classList.add('hidden');
-        AuthManager.updateUserBadge();
-        if (onSuccessCallback) onSuccessCallback(user);
-      }).catch(() => {
-        if (overlay) {
-          overlay.classList.remove('hidden');
-          if (userInput) userInput.focus();
-        }
-      });
-      return;
-    }
-
-    // Exibir tela de login
-    if (overlay) {
-      overlay.classList.remove('hidden');
-      if (userInput) userInput.focus();
-    }
-
-    // Submissão do formulário de login
+    // Submissão do formulário de login (sempre registrado primeiro)
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = userInput?.value || '';
-        const pass = passInput?.value || '';
+        const user = userInput?.value?.trim() || '';
+        const pass = passInput?.value?.trim() || '';
         const remember = document.getElementById('login-remember')?.checked ?? true;
+
+        if (!user || !pass) {
+          if (errorMsg) {
+            errorMsg.textContent = 'Por favor, informe o usuário e a senha.';
+            errorMsg.classList.remove('hidden');
+          }
+          return;
+        }
 
         if (loginSubmitBtn) {
           loginSubmitBtn.disabled = true;
@@ -164,10 +144,13 @@ export class AuthManager {
           }
         } catch (err) {
           if (errorMsg) {
-            errorMsg.textContent = err.message || 'Credenciais inválidas.';
+            errorMsg.textContent = err.message || 'Usuário ou senha incorretos.';
             errorMsg.classList.remove('hidden');
           }
-          if (passInput) passInput.value = '';
+          if (passInput) {
+            passInput.value = '';
+            passInput.focus();
+          }
         } finally {
           if (loginSubmitBtn) {
             loginSubmitBtn.disabled = false;
@@ -175,6 +158,18 @@ export class AuthManager {
           }
         }
       });
+    }
+
+    // Atualiza cabeçalho com usuário ativo
+    AuthManager.updateUserBadge();
+
+    // Se já autenticado, fecha modal e executa callback; senão, exibe tela de login
+    if (AuthManager.isAuthenticated()) {
+      if (overlay) overlay.classList.add('hidden');
+      if (onSuccessCallback) onSuccessCallback(AuthManager.getCurrentUser());
+    } else {
+      if (overlay) overlay.classList.remove('hidden');
+      if (userInput) userInput.focus();
     }
   }
 

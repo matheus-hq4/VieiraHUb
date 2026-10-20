@@ -75,10 +75,13 @@ export class ApiClient {
 
       // Tratamento de sessão expirada ou não autorizada
       if (response.status === 401) {
-        ApiClient.clearAuth();
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Sessão expirada. Faça login novamente.');
+        // Se a rota for o próprio login, não limpa token nem dispara auth:unauthorized
+        if (!endpoint.includes('/api/auth/login')) {
+          ApiClient.clearAuth();
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
+        throw new Error(errData.error || 'Usuário ou senha incorretos.');
       }
 
       if (response.status === 403) {
