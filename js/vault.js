@@ -87,6 +87,8 @@ export class VaultManager {
           } else {
             this.activeCategory = 'Todos';
           }
+          const tabBadge = document.getElementById('vault-tab-credentials-count');
+          if (tabBadge) tabBadge.textContent = this.passwords.length;
           this.render();
           return;
         }
@@ -95,6 +97,8 @@ export class VaultManager {
       console.error('[Vault] Erro ao carregar senhas da API:', e);
     }
     this.passwords = [];
+    const tabBadge = document.getElementById('vault-tab-credentials-count');
+    if (tabBadge) tabBadge.textContent = 0;
     this.render();
   }
 
@@ -212,9 +216,18 @@ export class VaultManager {
       this.genApplyBtn.addEventListener('click', () => {
         const val = this.genResultInput?.value;
         if (val) {
-          const passInput = document.getElementById('vault-password');
-          if (passInput) passInput.value = val;
-          this.showToast('Senha aplicada no formulário do cofre!');
+          const emailModal = document.getElementById('email-modal');
+          const isEmailModalOpen = emailModal && !emailModal.classList.contains('hidden');
+          const emailPassInput = document.getElementById('email-form-password');
+          const passInput = document.getElementById('vault-form-password') || document.getElementById('vault-password');
+
+          if (isEmailModalOpen && emailPassInput) {
+            emailPassInput.value = val;
+            this.showToast('Senha aplicada no cadastro do e-mail!');
+          } else if (passInput) {
+            passInput.value = val;
+            this.showToast('Senha aplicada no formulário do cofre!');
+          }
           this.closeGenerator();
         }
       });

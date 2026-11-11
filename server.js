@@ -422,6 +422,75 @@ app.delete('/api/vault/:id', requireAdmin, (req, res) => {
 });
 
 // ==========================================
+// 4.1 E-MAILS & CONTAS DOS COLABORADORES (PROTEGIDO)
+// ==========================================
+
+// Listar e-mails de colaboradores
+app.get('/api/employee-emails', requireAuth, (req, res) => {
+  const allEmails = db.get('employee_emails') || [];
+  if (req.user && req.user.role === 'admin') {
+    return res.json(allEmails);
+  }
+  const visible = allEmails.filter((item) => !item.adminOnly);
+  return res.json(visible);
+});
+
+// Adicionar novo e-mail de colaborador
+app.post('/api/employee-emails', requireAuth, (req, res) => {
+  const { name, email, password, department, notes, adminOnly } = req.body || {};
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios.' });
+  }
+
+  const isOnlyAdmin = (req.user && req.user.role === 'admin') ? !!adminOnly : false;
+
+  const newEmail = db.insert('employee_emails', {
+    name: name.trim(),
+    email: email.trim(),
+    password: password.trim(),
+    department: department ? department.trim() : 'Geral',
+    notes: notes ? notes.trim() : '',
+    adminOnly: isOnlyAdmin,
+    updatedAt: new Date().toISOString().slice(0, 10)
+  });
+
+  return res.status(201).json(newEmail);
+});
+
+// Atualizar e-mail de colaborador
+app.put('/api/employee-emails/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const existing = db.findById('employee_emails', id);
+  if (!existing) return res.status(404).json({ error: 'E-mail de colaborador não encontrado.' });
+
+  if (existing.adminOnly && (!req.user || req.user.role !== 'admin')) {
+    return res.status(403).json({ error: 'Apenas administradores podem modificar este registro restrito.' });
+  }
+
+  const updates = { ...req.body, updatedAt: new Date().toISOString().slice(0, 10) };
+
+  if (req.user && req.user.role === 'admin') {
+    if (typeof req.body.adminOnly !== 'undefined') {
+      updates.adminOnly = !!req.body.adminOnly;
+    }
+  } else {
+    delete updates.adminOnly;
+  }
+
+  const updated = db.update('employee_emails', id, updates);
+  return res.json(updated);
+});
+
+// Excluir e-mail de colaborador (apenas Administrador)
+app.delete('/api/employee-emails/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const success = db.delete('employee_emails', id);
+  if (!success) return res.status(404).json({ error: 'E-mail de colaborador não encontrado.' });
+  return res.json({ success: true });
+});
+
+// ==========================================
 // 5. CONTROLE DE ESTOQUE TI (PROTEGIDO)
 // ==========================================
 

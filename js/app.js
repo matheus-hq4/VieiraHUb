@@ -1,6 +1,7 @@
 import { loadTools, saveTools, deleteTool, resetToDefaults, loadTheme, saveTheme } from './storage.js';
 import { AuthManager } from './auth.js';
 import { VaultManager } from './vault.js';
+import { EmployeeEmailsManager } from './emails.js';
 import { InventoryManager } from './inventory.js';
 import { api } from './api.js';
 
@@ -63,6 +64,7 @@ class App {
 
   initModules() {
     this.vault = new VaultManager((msg) => this.showToast(msg), this.viewMode);
+    this.employeeEmails = new EmployeeEmailsManager((msg) => this.showToast(msg), this.viewMode);
     this.inventory = new InventoryManager((msg) => this.showToast(msg), this.viewMode);
   }
 
@@ -233,6 +235,9 @@ class App {
         if (this.vault && typeof this.vault.setViewMode === 'function') {
           this.vault.setViewMode(this.viewMode);
         }
+        if (this.employeeEmails && typeof this.employeeEmails.setViewMode === 'function') {
+          this.employeeEmails.setViewMode(this.viewMode);
+        }
         if (this.inventory && typeof this.inventory.setViewMode === 'function') {
           this.inventory.setViewMode(this.viewMode);
         }
@@ -359,6 +364,9 @@ class App {
           this.vault.closeModal();
           this.vault.closeGenerator();
         }
+        if (this.employeeEmails) {
+          this.employeeEmails.closeModal();
+        }
         if (this.inventory) {
           this.inventory.closeModal();
         }
@@ -395,7 +403,11 @@ class App {
     if (this.activeTab === 'apps') {
       targetInput = this.searchInput;
     } else if (this.activeTab === 'vault') {
-      targetInput = document.getElementById('vault-search-input');
+      if (this.employeeEmails && this.employeeEmails.activeSubtab === 'emails') {
+        targetInput = document.getElementById('emails-search-input');
+      } else {
+        targetInput = document.getElementById('vault-search-input');
+      }
     } else if (this.activeTab === 'inventory') {
       targetInput = document.getElementById('inventory-search-input');
     } else if (this.activeTab === 'logins') {
@@ -1574,9 +1586,15 @@ class App {
     });
 
     // Render active pane com sincronização em tempo real do servidor
-    if (tabId === 'vault' && this.vault) {
-      this.vault.setViewMode(this.viewMode);
-      this.vault.loadPasswords();
+    if (tabId === 'vault') {
+      if (this.vault) {
+        this.vault.setViewMode(this.viewMode);
+        this.vault.loadPasswords();
+      }
+      if (this.employeeEmails) {
+        this.employeeEmails.setViewMode(this.viewMode);
+        this.employeeEmails.loadEmails();
+      }
     } else if (tabId === 'inventory' && this.inventory) {
       this.inventory.setViewMode(this.viewMode);
       this.inventory.loadItems();
