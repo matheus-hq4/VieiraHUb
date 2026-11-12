@@ -490,6 +490,101 @@ app.delete('/api/employee-emails/:id', requireAdmin, (req, res) => {
   return res.json({ success: true });
 });
 
+// Limpar todos os e-mails de colaboradores (apenas Administrador)
+app.delete('/api/employee-emails', requireAdmin, (req, res) => {
+  db.set('employee_emails', []);
+  return res.json({ success: true, message: 'Todos os e-mails foram excluídos com sucesso.' });
+});
+
+// Restaurar e-mails a partir do mapeamento do AD (apenas Administrador)
+app.post('/api/employee-emails/restore-from-ad', requireAdmin, (req, res) => {
+  const ad = db.get('ad_logins') || {};
+  const rawText = ad.rawText || '';
+  const lines = rawText.split('\n');
+
+  let currentDept = 'CEO / DIRETORIA';
+  const results = [];
+  let idCounter = 1;
+
+  function cleanDeptName(d) {
+    const norm = d.toUpperCase();
+    if (norm.includes('DIRETORIA') || norm.includes('CEO')) return 'CEO / DIRETORIA';
+    if (norm.includes('FINAN')) return 'FINANCEIRO';
+    if (norm.includes('RH') || norm.includes('DP')) return 'RH/DP';
+    if (norm.includes('RECEP')) return 'RECEPÇÃO';
+    if (norm.includes('MKT') || norm.includes('MARKETING')) return 'MARKETING';
+    if (norm.includes('PLANEJAMENTO')) return 'PLANEJAMENTO';
+    if (norm.includes('GERENCIA')) return 'GERENCIA';
+    if (norm.includes('BACKOFFICE') || norm.includes('SUPERVISOR') || norm.includes('OPERADOR')) return 'BACKOFFICE';
+    if (norm.includes('QUALIDADE') || norm.includes('MESA')) return 'MESA LIBERAÇÂO / QUALIDADE';
+    if (norm.includes('EXPANDE')) return 'EXPANDE';
+    if (norm.includes('TI') || norm.includes('VIEIRATECH')) return 'VIEIRATECH - TI';
+    return d;
+  }
+
+  function formatName(rawUser) {
+    let u = rawUser;
+    let role = '';
+    if (u.includes('Gerente Geral')) {
+      role = ' (Gerente Geral)';
+      u = u.replace('Gerente Geral', '').trim();
+    } else if (u.includes('Gerente Oper')) {
+      role = ' (Gerente Operacional)';
+      u = u.replace('Gerente Oper', '').trim();
+    }
+    const emailPart = u.split('@')[0];
+    let clean = emailPart.replace(/\.(finan|dp|rh|mkt|recepcao|bko|mesalib|mesa\d+|vieiratech)$/i, '');
+    const parts = clean.split('.');
+    const formatted = parts
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ');
+    return (formatted + role).trim();
+  }
+
+  for (const line of lines) {
+    const tr = line.trim();
+    if (tr.startsWith('<') && !tr.startsWith('<VieiraCred')) {
+      const d = tr.replace(/^<+/, '').trim();
+      if (!d.startsWith('Espinha')) {
+        currentDept = cleanDeptName(d);
+      }
+    }
+    if (tr.includes('@')) {
+      const parts = tr.split('|');
+      let user = parts[0]?.replace(/^[✔❌X>]\s*/, '').trim();
+      const pass = parts[1]?.replace(/user\/senha:\s*/i, '').trim();
+      if (user && user.includes('@')) {
+        let emailUser = user.split('@')[0];
+        if (emailUser.includes('Gerente')) {
+          const m = emailUser.match(/[a-zA-Z0-9._-]+$/);
+          if (m) emailUser = m[0];
+        }
+        let note = '';
+        if (user.includes('danilogen') || user.includes('giovana') || user.includes('fernada')) {
+          note = 'Supervisor(a) Backoffice';
+        } else if (user.includes('op.bko') || user.includes('mariana.souza') || user.includes('isabeli')) {
+          note = 'Operador(a) Backoffice';
+        }
+
+        const name = formatName(user);
+        results.push({
+          id: 'email-' + (1700000000000 + idCounter++),
+          name: name,
+          email: `${emailUser}@vieiracred.com.br`,
+          password: pass,
+          department: currentDept,
+          notes: note,
+          adminOnly: false,
+          updatedAt: new Date().toISOString().slice(0, 10)
+        });
+      }
+    }
+  }
+
+  db.set('employee_emails', results);
+  return res.json({ success: true, count: results.length, emails: results });
+});
+
 // ==========================================
 // 5. CONTROLE DE ESTOQUE TI (PROTEGIDO)
 // ==========================================

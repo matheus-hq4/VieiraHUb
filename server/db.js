@@ -112,17 +112,17 @@ const SEED_DATA = {
     {
         "id": "email-1700000000001",
         "name": "Erick",
-        "email": "erick@vieiracredsv",
+        "email": "erick@vieiracred.com.br",
         "password": "jOU+ql1mz",
         "department": "CEO / DIRETORIA",
         "notes": "",
         "adminOnly": false,
-        "updatedAt": "2026-09-29"
+        "updatedAt": "2026-11-11"
     },
     {
         "id": "email-1700000000002",
         "name": "Jacqueline",
-        "email": "jacqueline@vieiracredsv",
+        "email": "jacqueline@vieiracred.com.br",
         "password": "syDi8zudoY",
         "department": "CEO / DIRETORIA",
         "notes": "",
@@ -132,7 +132,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000003",
         "name": "VivianeVie",
-        "email": "VivianeVie.Finan@vieiracredsv",
+        "email": "VivianeVie.Finan@vieiracred.com.br",
         "password": "syDi8zudoY",
         "department": "FINANCEIRO",
         "notes": "",
@@ -142,7 +142,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000004",
         "name": "Renata",
-        "email": "renata@vieiracredsv",
+        "email": "renata@vieiracred.com.br",
         "password": "syDi8zudoY",
         "department": "FINANCEIRO",
         "notes": "",
@@ -152,7 +152,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000005",
         "name": "MelissaRod",
-        "email": "MelissaRod.Finan@vieiracredsv",
+        "email": "MelissaRod.Finan@vieiracred.com.br",
         "password": "ZgiKfP4J1B",
         "department": "FINANCEIRO",
         "notes": "",
@@ -162,7 +162,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000006",
         "name": "CarlaFel",
-        "email": "CarlaFel.Finan@vieiracredsv",
+        "email": "CarlaFel.Finan@vieiracred.com.br",
         "password": "A1sEan4RMk",
         "department": "FINANCEIRO",
         "notes": "",
@@ -172,7 +172,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000007",
         "name": "CaioAra",
-        "email": "CaioAra.Finan@vieiracredsv",
+        "email": "CaioAra.Finan@vieiracred.com.br",
         "password": "Ah3zWmToRP",
         "department": "FINANCEIRO",
         "notes": "",
@@ -182,7 +182,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000008",
         "name": "RobertaMar",
-        "email": "RobertaMar.Dp@vieiracredsv",
+        "email": "RobertaMar.Dp@vieiracred.com.br",
         "password": "21u9W3v3RX",
         "department": "RH/DP",
         "notes": "",
@@ -192,7 +192,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000009",
         "name": "DeboraRub",
-        "email": "DeboraRub.Rh@vieiracredsv",
+        "email": "DeboraRub.Rh@vieiracred.com.br",
         "password": "092UgFQ37B",
         "department": "RH/DP",
         "notes": "",
@@ -202,7 +202,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000010",
         "name": "AnarleiDia",
-        "email": "AnarleiDia.Dp@vieiracredsv",
+        "email": "AnarleiDia.Dp@vieiracred.com.br",
         "password": "X2aAkCsQe1",
         "department": "RH/DP",
         "notes": "",
@@ -212,7 +212,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000011",
         "name": "Ariana Rosa",
-        "email": "ariana.rosa@vieiracredsv",
+        "email": "ariana.rosa@vieiracred.com.br",
         "password": "092UgFQ37B",
         "department": "RH/DP",
         "notes": "",
@@ -222,7 +222,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000012",
         "name": "FernandaCar",
-        "email": "FernandaCar.Rh@vieiracredsv",
+        "email": "FernandaCar.Rh@vieiracred.com.br",
         "password": "092UgFQ37B",
         "department": "RH/DP",
         "notes": "",
@@ -232,7 +232,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000013",
         "name": "MilenaAra",
-        "email": "MilenaAra.Rh@vieiracredsv",
+        "email": "MilenaAra.Rh@vieiracred.com.br",
         "password": "1G936Bxyuc",
         "department": "RH/DP",
         "notes": "",
@@ -242,7 +242,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000014",
         "name": "LauraQue",
-        "email": "LauraQue.Rh@vieiracredsv",
+        "email": "LauraQue.Rh@vieiracred.com.br",
         "password": "314MxAuGB3",
         "department": "RH/DP",
         "notes": "",
@@ -252,7 +252,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000015",
         "name": "AlinePeg",
-        "email": "AlinePeg.Rh@vieiracredsv",
+        "email": "AlinePeg.Rh@vieiracred.com.br",
         "password": "vAWxK5VhNe",
         "department": "RH/DP",
         "notes": "",
@@ -262,7 +262,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000016",
         "name": "WesleyLin",
-        "email": "WesleyLin.Rh@vieiracredsv",
+        "email": "WesleyLin.Rh@vieiracred.com.br",
         "password": "7Ka6j6CkPV",
         "department": "RH/DP",
         "notes": "",
@@ -272,7 +272,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000017",
         "name": "LiviaMou",
-        "email": "LiviaMou.Recepcao@vieiracredsv",
+        "email": "LiviaMou.Recepcao@vieiracred.com.br",
         "password": "1BmThXgUEG",
         "department": "RECEPÇÃO",
         "notes": "",
@@ -282,7 +282,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000018",
         "name": "Camila Mendes",
-        "email": "camila.mendes@vieiracredsv",
+        "email": "camila.mendes@vieiracred.com.br",
         "password": "1BmThXgUEG",
         "department": "RECEPÇÃO",
         "notes": "",
@@ -292,7 +292,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000019",
         "name": "GabrielSet",
-        "email": "GabrielSet.Mkt@vieiracredsv",
+        "email": "GabrielSet.Mkt@vieiracred.com.br",
         "password": "ofiVMfoT9o",
         "department": "MARKETING",
         "notes": "",
@@ -302,7 +302,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000020",
         "name": "PedroNat",
-        "email": "PedroNat.Mkt@vieiracredsv",
+        "email": "PedroNat.Mkt@vieiracred.com.br",
         "password": "fC7NRLKetj",
         "department": "MARKETING",
         "notes": "",
@@ -312,7 +312,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000021",
         "name": "Gustavo Silva",
-        "email": "gustavo.silva@vieiracredsv",
+        "email": "gustavo.silva@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -322,7 +322,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000022",
         "name": "Lauany Santos",
-        "email": "lauany.santos@vieiracredsv",
+        "email": "lauany.santos@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -332,7 +332,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000023",
         "name": "Gabriele Sorrilha",
-        "email": "gabriele.sorrilha@vieiracredsv",
+        "email": "gabriele.sorrilha@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -342,7 +342,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000024",
         "name": "Luana Cristina",
-        "email": "luana.cristina@vieiracredsv",
+        "email": "luana.cristina@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -352,7 +352,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000025",
         "name": "Ronaldo",
-        "email": "Ronaldo@vieiracredsv",
+        "email": "Ronaldo@vieiracred.com.br",
         "password": "R0n4ld0",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -362,7 +362,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000026",
         "name": "Willian Sanches",
-        "email": "willian.sanches@vieiracredsv",
+        "email": "willian.sanches@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -372,7 +372,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000027",
         "name": "Gustavo Aniceto",
-        "email": "gustavo.aniceto@vieiracredsv",
+        "email": "gustavo.aniceto@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -382,7 +382,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000028",
         "name": "Pedro Henrique",
-        "email": "pedro.henrique@vieiracredsv",
+        "email": "pedro.henrique@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -392,7 +392,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000029",
         "name": "Andre Felipe",
-        "email": "andre.felipe@vieiracredsv",
+        "email": "andre.felipe@vieiracred.com.br",
         "password": "Pl4n@2026",
         "department": "PLANEJAMENTO",
         "notes": "",
@@ -402,7 +402,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000030",
         "name": "Jenifer (Gerente Geral)",
-        "email": "jenifer@vieiracredsv",
+        "email": "jenifer@vieiracred.com.br",
         "password": "G3r3ncia@26",
         "department": "GERENCIA",
         "notes": "",
@@ -412,7 +412,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000031",
         "name": "Jessica (Gerente Operacional)",
-        "email": "jessica@vieiracredsv",
+        "email": "jessica@vieiracred.com.br",
         "password": "G3r3ncia@26",
         "department": "GERENCIA",
         "notes": "",
@@ -422,7 +422,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000032",
         "name": "Giovana Cunha",
-        "email": "giovana.cunha@vieiracredsv",
+        "email": "giovana.cunha@vieiracred.com.br",
         "password": "B4ckup@2026",
         "department": "BACKOFFICE",
         "notes": "Supervisor(a) Backoffice",
@@ -432,7 +432,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000033",
         "name": "Danilogen",
-        "email": "danilogen.bko@vieiracredsv",
+        "email": "danilogen.bko@vieiracred.com.br",
         "password": "B4ckup@2026",
         "department": "BACKOFFICE",
         "notes": "Supervisor(a) Backoffice",
@@ -442,7 +442,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000034",
         "name": "Fernada",
-        "email": "fernada@vieiracredsv",
+        "email": "fernada@vieiracred.com.br",
         "password": "B4ckup@2026",
         "department": "BACKOFFICE",
         "notes": "Supervisor(a) Backoffice",
@@ -452,7 +452,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000035",
         "name": "Op",
-        "email": "op.bko@vieiracredsv",
+        "email": "op.bko@vieiracred.com.br",
         "password": "B4ckup@2026",
         "department": "BACKOFFICE",
         "notes": "Operador(a) Backoffice",
@@ -462,7 +462,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000036",
         "name": "Mariana Souza",
-        "email": "mariana.souza@vieiracredsv",
+        "email": "mariana.souza@vieiracred.com.br",
         "password": "B4ckup@2026",
         "department": "BACKOFFICE",
         "notes": "Operador(a) Backoffice",
@@ -472,7 +472,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000037",
         "name": "Isabeli Victoria",
-        "email": "isabeli.victoria@vieiracredsv",
+        "email": "isabeli.victoria@vieiracred.com.br",
         "password": "B4ckup@2026",
         "department": "BACKOFFICE",
         "notes": "Operador(a) Backoffice",
@@ -482,7 +482,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000038",
         "name": "Qualidade",
-        "email": "qualidade@vieiracredsv",
+        "email": "qualidade@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -492,7 +492,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000039",
         "name": "Erika",
-        "email": "erika.mesalib@vieiracredsv",
+        "email": "erika.mesalib@vieiracred.com.br",
         "password": "syDi8zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -502,7 +502,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000040",
         "name": "Larissa",
-        "email": "larissa.mesa01@vieiracredsv",
+        "email": "larissa.mesa01@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -512,7 +512,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000041",
         "name": "Larissapereira",
-        "email": "larissapereira.mesa03@vieiracredsv",
+        "email": "larissapereira.mesa03@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -522,7 +522,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000042",
         "name": "Karoline",
-        "email": "karoline.mesa04@vieiracredsv",
+        "email": "karoline.mesa04@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -532,7 +532,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000043",
         "name": "Gabriel",
-        "email": "gabriel.mesa05@vieiracredsv",
+        "email": "gabriel.mesa05@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -542,7 +542,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000044",
         "name": "Thais",
-        "email": "thais.mesa06@vieiracredsv",
+        "email": "thais.mesa06@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -552,7 +552,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000045",
         "name": "Nathalie",
-        "email": "nathalie.mesa00@vieiracredsv",
+        "email": "nathalie.mesa00@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -562,7 +562,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000046",
         "name": "Maria",
-        "email": "maria.mesa07@vieiracredsv",
+        "email": "maria.mesa07@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -572,7 +572,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000047",
         "name": "Joyce",
-        "email": "joyce.mesa02@vieiracredsv",
+        "email": "joyce.mesa02@vieiracred.com.br",
         "password": "syDi9zudoY",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -582,7 +582,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000048",
         "name": "Ellen Silva",
-        "email": "ellen.silva@vieiracredsv",
+        "email": "ellen.silva@vieiracred.com.br",
         "password": "Qu4l1@2026",
         "department": "MESA LIBERAÇÂO / QUALIDADE",
         "notes": "",
@@ -592,7 +592,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000049",
         "name": "Lucas Sinobre",
-        "email": "lucas.sinobre@vieiracredsv",
+        "email": "lucas.sinobre@vieiracred.com.br",
         "password": "3xpand3@@2026",
         "department": "EXPANDE",
         "notes": "",
@@ -602,7 +602,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000050",
         "name": "Fabiana",
-        "email": "fabiana@vieiracredsv",
+        "email": "fabiana@vieiracred.com.br",
         "password": "3xpand3@@2026",
         "department": "EXPANDE",
         "notes": "",
@@ -612,7 +612,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000051",
         "name": "Laila Santos",
-        "email": "laila.santos@vieiracredsv",
+        "email": "laila.santos@vieiracred.com.br",
         "password": "3xpand3@@2026",
         "department": "EXPANDE",
         "notes": "",
@@ -622,7 +622,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000052",
         "name": "Matheus",
-        "email": "matheus.vieiratech@vieiracredsv",
+        "email": "matheus.vieiratech@vieiracred.com.br",
         "password": "$Vi3ir@Tech",
         "department": "VIEIRATECH - TI",
         "notes": "",
@@ -632,7 +632,7 @@ const SEED_DATA = {
     {
         "id": "email-1700000000053",
         "name": "Dener",
-        "email": "dener.vieiratech@vieiracredsv",
+        "email": "dener.vieiratech@vieiracred.com.br",
         "password": "$Vi3ir@Tech",
         "department": "VIEIRATECH - TI",
         "notes": "",

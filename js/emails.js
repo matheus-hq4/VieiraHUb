@@ -147,6 +147,7 @@ export class EmployeeEmailsManager {
     this.openAddBtn = document.getElementById('open-add-email-btn');
     this.openGeneratorBtn = document.getElementById('open-email-generator-btn');
     this.exportCsvBtn = document.getElementById('export-emails-csv-btn');
+    this.clearAllBtn = document.getElementById('clear-all-emails-btn');
 
     // Modal E-mail
     this.modal = document.getElementById('email-modal');
@@ -246,6 +247,11 @@ export class EmployeeEmailsManager {
     // Exportar CSV
     if (this.exportCsvBtn) {
       this.exportCsvBtn.addEventListener('click', () => this.exportCSV());
+    }
+
+    // Apagar Todos os E-mails
+    if (this.clearAllBtn) {
+      this.clearAllBtn.addEventListener('click', () => this.handleClearAll());
     }
 
     // Delegação de eventos no container de cards
@@ -426,6 +432,43 @@ export class EmployeeEmailsManager {
     }
   }
 
+  async handleClearAll() {
+    if (!this.emails || this.emails.length === 0) {
+      this.showToast('Não há e-mails de colaboradores para apagar.');
+      return;
+    }
+
+    if (
+      window.confirm(
+        `⚠️ ATENÇÃO: Tem certeza que deseja APAGAR TODOS os ${this.emails.length} e-mails de colaboradores do cofre?\n\nEsta ação removerá todos os e-mails e senhas desta aba.`
+      )
+    ) {
+      try {
+        await api.delete('/api/employee-emails');
+        this.showToast('Todos os e-mails de colaboradores foram excluídos com sucesso.');
+        await this.loadEmails();
+      } catch (err) {
+        alert('Erro ao excluir todos os e-mails: ' + err.message);
+      }
+    }
+  }
+
+  async handleRestoreFromAd() {
+    if (
+      window.confirm(
+        'Deseja restaurar todos os 53 e-mails dos colaboradores a partir do mapeamento do AD com o domínio @vieiracred.com.br?'
+      )
+    ) {
+      try {
+        const res = await api.post('/api/employee-emails/restore-from-ad');
+        this.showToast(`✅ ${res.count || 53} e-mails restaurados do AD com sucesso!`);
+        await this.loadEmails();
+      } catch (err) {
+        alert('Erro ao restaurar e-mails do AD: ' + err.message);
+      }
+    }
+  }
+
   togglePasswordReveal(id) {
     if (this.revealedSet.has(id)) {
       this.revealedSet.delete(id);
@@ -589,7 +632,10 @@ export class EmployeeEmailsManager {
           ${
             this.searchTerm || this.activeDepartment !== 'Todos'
               ? `<button id="reset-email-filters-btn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer">Limpar Filtros</button>`
-              : `<button id="empty-add-email-btn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors cursor-pointer"><i class="fa-solid fa-plus text-xs mr-1.5"></i>Novo E-mail</button>`
+              : `<div class="flex items-center justify-center gap-2 flex-wrap">
+                  <button id="empty-add-email-btn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors cursor-pointer"><i class="fa-solid fa-plus text-xs mr-1.5"></i>Novo E-mail</button>
+                  <button id="restore-ad-emails-btn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"><i class="fa-solid fa-arrows-rotate text-xs mr-1.5"></i>Restaurar E-mails do AD</button>
+                </div>`
           }
         </div>
       `;
@@ -608,6 +654,11 @@ export class EmployeeEmailsManager {
       const emptyAddBtn = document.getElementById('empty-add-email-btn');
       if (emptyAddBtn) {
         emptyAddBtn.addEventListener('click', () => this.openModal());
+      }
+
+      const restoreAdBtn = document.getElementById('restore-ad-emails-btn');
+      if (restoreAdBtn) {
+        restoreAdBtn.addEventListener('click', () => this.handleRestoreFromAd());
       }
 
       return;
